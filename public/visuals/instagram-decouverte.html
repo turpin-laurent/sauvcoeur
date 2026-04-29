@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080" />
+<title>SauvCœur.re — Visual Instagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+  body {
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+  }
+
+  .canvas {
+    width: 1080px;
+    height: 1080px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 35%, #0f3460 70%, #064e3b 100%);
+  }
+
+  /* ── Décorations fond ── */
+  .circle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%);
+  }
+  .c1 { width: 700px; height: 700px; top: -200px; right: -200px; }
+  .c2 { width: 500px; height: 500px; bottom: -150px; left: -100px; }
+
+  /* Grille pattes en fond */
+  .paw-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    opacity: 0.04;
+    pointer-events: none;
+  }
+  .paw-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+  }
+
+  /* ── Ligne de couleur haut ── */
+  .top-stripe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #34d399, #059669, #0d9488, #34d399);
+  }
+
+  /* ── Logo / Header ── */
+  .header {
+    position: absolute;
+    top: 52px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #34d399, #059669);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 8px 32px rgba(52,211,153,0.35);
+  }
+  .logo-name {
+    font-size: 34px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+  .logo-name em { font-style: normal; color: #6ee7b7; }
+  .logo-sub { font-size: 14px; color: rgba(255,255,255,0.45); letter-spacing: 0.12em; font-weight: 500; text-transform: uppercase; }
+
+  /* ── Zone centrale ── */
+  .center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -52%);
+    text-align: center;
+    width: 900px;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(52,211,153,0.15);
+    border: 1px solid rgba(52,211,153,0.4);
+    border-radius: 100px;
+    padding: 8px 20px;
+    margin-bottom: 30px;
+  }
+  .tag span { color: #6ee7b7; font-size: 15px; font-weight: 600; }
+
+  .main-title {
+    font-size: 86px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin-bottom: 10px;
+  }
+  .main-title .accent { color: #6ee7b7; display: block; }
+  .main-title .small  { font-size: 60px; }
+
+  .divider {
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #34d399, #0d9488);
+    border-radius: 2px;
+    margin: 28px auto;
+  }
+
+  .sub-text {
+    font-size: 22px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* ── 3 icônes fonctionnalités ── */
+  .features {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 50px;
+  }
+  .feat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 200px;
+  }
+  .feat-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .feat-icon.red    { background: rgba(239,68,68,0.2); }
+  .feat-icon.amber  { background: rgba(245,158,11,0.2); }
+  .feat-icon.green  { background: rgba(52,211,153,0.2); }
+  .feat h3 { font-size: 17px; font-weight: 700; color: white; text-align: center; }
+  .feat p  { font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; line-height: 1.4; }
+
+  /* ── Séparateur vertical ── */
+  .vert-sep {
+    width: 1px;
+    background: rgba(255,255,255,0.12);
+    margin: 8px 0;
+    align-self: stretch;
+  }
+
+  /* ── CTA ── */
+  .cta-zone {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: white;
+    font-size: 22px;
+    font-weight: 800;
+    padding: 20px 48px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(52,211,153,0.35);
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+  }
+  .foot-stat { text-align: center; }
+  .foot-stat .n { font-size: 20px; font-weight: 800; color: #6ee7b7; }
+  .foot-stat .l { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+  .foot-sep { width: 1px; height: 32px; background: rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- Fond -->
+  <div class="circle c1"></div>
+  <div class="circle c2"></div>
+
+  <!-- Grille de pattes -->
+  <div class="paw-grid">
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+    <div class="paw-cell">🐾</div><div class="paw-cell">🐾</div><div class="paw-cell">🐾</div>
+  </div>
+
+  <!-- Stripe haut -->
+  <div class="top-stripe"></div>
+
+  <!-- Logo -->
+  <div class="header">
+    <div class="logo-wrap">
+      <div class="logo-icon">🐾</div>
+      <div class="logo-name">SauvC<em>œ</em>ur<span style="color:rgba(255,255,255,0.35)">.re</span></div>
+    </div>
+    <div class="logo-sub">La plateforme animale de La Réunion</div>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="center">
+    <div class="tag">
+      <span>✨ Nouveau à La Réunion</span>
+    </div>
+
+    <div class="main-title">
+      Votre animal<br />
+      <span class="accent">mérite</span>
+      <span class="accent small">d'être retrouvé</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="sub-text">
+      La 1ère plateforme 100% réunionnaise pour signaler, retrouver et adopter des animaux.
+      Gratuit · Rapide · Communautaire
+    </p>
+
+    <!-- 3 features -->
+    <div class="features">
+      <div class="feat">
+        <div class="feat-icon red">😢</div>
+        <h3>Animal perdu ?</h3>
+        <p>Signalez en 2 min avec photo et localisation</p>
+      </div>
+      <div class="vert-sep"></div>
+      <div class="feat">
+        <div class="feat-icon amber">🔍</div>
+        <h3>Animal trouvé ?</h3>
+        <p>Aidez-le à retrouver son propriétaire</p>
+      </div>
+      <div class="vert-sep"></div>
+      <div class="feat">
+        <div class="feat-icon green">🏠</div>
+        <h3>Adoption</h3>
+        <p>Des animaux cherchent une famille à La Réunion</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-zone">
+    <div class="cta-btn">
+      📢 sauvcoeur.re — C'est gratuit !
+    </div>
+  </div>
+
+  <!-- Footer stats -->
+  <div class="footer">
+    <div class="foot-stat"><div class="n">22 communes</div><div class="l">couvertes à La Réunion</div></div>
+    <div class="foot-sep"></div>
+    <div class="foot-stat"><div class="n">100% gratuit</div><div class="l">pour les particuliers</div></div>
+    <div class="foot-sep"></div>
+    <div class="foot-stat"><div class="n">24h</div><div class="l">délai de publication</div></div>
+    <div class="foot-sep"></div>
+    <div class="foot-stat"><div class="n">Communauté</div><div class="l">réunionnaise solidaire</div></div>
+  </div>
+
+</div>
+</body>
+</html>

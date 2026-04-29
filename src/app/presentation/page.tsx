@@ -1,0 +1,278 @@
+import Link from 'next/link'
+import { PawPrint, Search, Heart, MapPin, Clock, Users, CheckCircle2, ArrowRight, Home, AlertTriangle, HandHeart } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'À propos — SauvCœur.re',
+  description: 'Découvrez SauvCœur.re, la 1ère plateforme réunionnaise pour retrouver les animaux perdus, signaler un animal trouvé et adopter à La Réunion.',
+}
+
+// ── Statistiques locales ───────────────────────────────────────
+const STATS = [
+  { value: '22',    label: 'Communes couvertes',         sub: 'dans tout le 974' },
+  { value: '100%',  label: 'Gratuit',                    sub: 'pour les particuliers' },
+  { value: '24h',   label: 'Délai de modération',        sub: 'max après publication' },
+  { value: '3',     label: 'Types d\'annonces',          sub: 'Perdu · Trouvé · Adoption' },
+]
+
+// ── Étapes "comment ça marche" ─────────────────────────────────
+const STEPS_LOST = [
+  { n: '1', title: 'Publiez votre alerte',        desc: 'Quelques clics suffisent : photo, description, commune et coordonnées de contact. Votre annonce est créée immédiatement.' },
+  { n: '2', title: 'Modération en 24h',           desc: 'Notre équipe vérifie l\'annonce et la met en ligne rapidement pour maximiser vos chances dès les premières heures.' },
+  { n: '3', title: 'La communauté se mobilise',   desc: 'Les habitants de votre commune voient l\'alerte et peuvent vous contacter directement via notre formulaire sécurisé.' },
+  { n: '4', title: 'Votre animal est retrouvé !', desc: 'Marquez l\'annonce comme résolue pour informer la communauté et libérer la place pour d\'autres alertes.' },
+]
+
+const STEPS_ADOPT = [
+  { n: '1', title: 'Consultez les annonces',      desc: 'Filtrez par commune, espèce, âge. Chaque fiche présente l\'animal avec photos, description et histoire.' },
+  { n: '2', title: 'Prenez contact',              desc: 'Un formulaire sécurisé vous met en relation avec le particulier ou l\'association qui propose l\'adoption.' },
+  { n: '3', title: 'Rencontre et visite',         desc: 'Organisez une rencontre pour vous assurer que l\'animal correspond à votre mode de vie et à votre famille.' },
+  { n: '4', title: 'Nouvelle famille !',          desc: 'L\'adoption est finalisée entre les parties. SauvCœur accompagne chaque étape sans frais de mise en relation.' },
+]
+
+export default function PresentationPage() {
+  return (
+    <main className="bg-white">
+
+      {/* ── HERO ─────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white">
+        <div className="absolute inset-0 opacity-5 pointer-events-none select-none"
+          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ctext x=\'50%25\' y=\'55%25\' font-size=\'28\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3E🐾%3C/text%3E%3C/svg%3E")' }} />
+
+        <div className="relative max-w-5xl mx-auto px-4 py-20 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/15 border border-white/30 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+            <MapPin className="h-4 w-4" />
+            La Réunion · 974 · Depuis 2026
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight mb-6">
+            La plateforme animale<br />
+            <span className="text-emerald-200">100 % réunionnaise</span>
+          </h1>
+
+          <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed mb-10">
+            SauvCœur.re est la première plateforme créée par et pour les Réunionnais.
+            Signalez un animal perdu, aidez un animal trouvé, ou offrez-lui une famille — gratuit et sans inscription obligatoire.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/animaux/nouveau"
+              className="flex items-center justify-center gap-2 bg-white text-emerald-700 font-bold px-6 py-3.5 rounded-2xl hover:bg-emerald-50 transition-colors shadow-lg">
+              <PawPrint className="h-5 w-5" />
+              Publier une alerte gratuite
+            </Link>
+            <Link href="/animaux?status=to_adopt"
+              className="flex items-center justify-center gap-2 bg-white/15 border border-white/30 font-semibold px-6 py-3.5 rounded-2xl hover:bg-white/25 transition-colors">
+              <Heart className="h-5 w-5" />
+              Voir les animaux à adopter
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── STATS ────────────────────────────────────────────── */}
+      <section className="bg-slate-900 text-white">
+        <div className="max-w-5xl mx-auto px-4 py-10 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+          {STATS.map(s => (
+            <div key={s.label}>
+              <p className="text-3xl sm:text-4xl font-extrabold text-emerald-400">{s.value}</p>
+              <p className="font-semibold text-white mt-1 text-sm">{s.label}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{s.sub}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 3 USAGES ─────────────────────────────────────────── */}
+      <section className="max-w-5xl mx-auto px-4 py-16">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-3">
+          Une plateforme, trois usages essentiels
+        </h2>
+        <p className="text-center text-slate-500 mb-10 max-w-xl mx-auto">
+          Que vous ayez perdu votre animal, que vous en ayez trouvé un, ou que vous souhaitiez adopter — SauvCœur est fait pour vous.
+        </p>
+
+        <div className="grid sm:grid-cols-3 gap-6">
+          {/* Perdu */}
+          <div className="rounded-2xl border-2 border-red-100 bg-red-50 p-6 space-y-3">
+            <div className="w-12 h-12 bg-red-500 text-white rounded-2xl flex items-center justify-center text-xl shadow">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg">Animal perdu ?</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Publiez une alerte en 2 minutes avec photo, commune et dernière observation. La communauté réunionnaise est alertée immédiatement.
+            </p>
+            <Link href="/animaux/nouveau"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:text-red-700">
+              Publier une alerte <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Trouvé */}
+          <div className="rounded-2xl border-2 border-amber-100 bg-amber-50 p-6 space-y-3">
+            <div className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center text-xl shadow">
+              <Search className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg">Vous avez trouvé un animal ?</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Signalez-le pour aider son propriétaire à le retrouver. Vérifiez aussi les alertes publiées : son signalement est peut-être déjà en ligne.
+            </p>
+            <Link href="/animaux/nouveau"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 hover:text-amber-800">
+              Signaler un animal trouvé <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Adoption */}
+          <div className="rounded-2xl border-2 border-emerald-100 bg-emerald-50 p-6 space-y-3">
+            <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-xl shadow">
+              <Home className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg">Adopter à La Réunion</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Des animaux cherchent une famille aimante à La Réunion. Particuliers, associations et refuges publient leurs annonces d'adoption gratuitement.
+            </p>
+            <Link href="/animaux?status=to_adopt"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+              Voir les adoptions <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── COMMENT ÇA MARCHE — PERDU ────────────────────────── */}
+      <section className="bg-slate-50 py-16">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertTriangle className="h-6 w-6 text-red-500" />
+            <h2 className="text-2xl font-extrabold text-slate-900">Animal perdu : comment ça marche ?</h2>
+          </div>
+          <p className="text-slate-500 mb-8">Chaque minute compte. Voici comment SauvCœur maximise vos chances.</p>
+
+          <div className="grid sm:grid-cols-4 gap-6">
+            {STEPS_LOST.map(s => (
+              <div key={s.n} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
+                <div className="w-9 h-9 rounded-xl bg-red-500 text-white flex items-center justify-center font-bold text-sm">{s.n}</div>
+                <h3 className="font-bold text-slate-900 text-sm">{s.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link href="/animaux/nouveau"
+              className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-2xl transition-colors">
+              <AlertTriangle className="h-5 w-5" />
+              Publier une alerte maintenant
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── COMMENT ÇA MARCHE — ADOPTION ─────────────────────── */}
+      <section className="py-16">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex items-center gap-3 mb-2">
+            <HandHeart className="h-6 w-6 text-emerald-600" />
+            <h2 className="text-2xl font-extrabold text-slate-900">Adopter : comment ça marche ?</h2>
+          </div>
+          <p className="text-slate-500 mb-8">Adopter à La Réunion, simplement et gratuitement, entre particuliers ou via une association.</p>
+
+          <div className="grid sm:grid-cols-4 gap-6">
+            {STEPS_ADOPT.map(s => (
+              <div key={s.n} className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 space-y-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">{s.n}</div>
+                <h3 className="font-bold text-slate-900 text-sm">{s.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link href="/animaux?status=to_adopt"
+              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-2xl transition-colors">
+              <Heart className="h-5 w-5" />
+              Trouver un animal à adopter
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AVANTAGES ────────────────────────────────────────── */}
+      <section className="bg-slate-900 text-white py-16">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-center mb-3">Pourquoi SauvCœur ?</h2>
+          <p className="text-center text-slate-400 mb-10 max-w-xl mx-auto">
+            Une plateforme pensée pour les spécificités de La Réunion, par une équipe locale.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: '🌴', title: '100 % local', desc: 'Conçue pour La Réunion, avec les 22 communes, les associations locales et la communauté réunionnaise.' },
+              { icon: '💶', title: 'Totalement gratuit', desc: 'Publication, recherche, contact — tout est gratuit pour les particuliers. Pas de compte requis pour consulter.' },
+              { icon: '🔒', title: 'Contact sécurisé', desc: 'Pas d\'email affiché en clair. Les échanges passent par notre formulaire sécurisé, sans spam ni démarchage.' },
+              { icon: '🛡️', title: 'Annonces modérées', desc: 'Chaque annonce est vérifiée par notre équipe avant publication. Fini les fausses alertes et les arnaques.' },
+              { icon: '📍', title: 'Géolocalisation précise', desc: 'Carte interactive par commune, localisation de la dernière observation, signalements autour du lieu de perte.' },
+              { icon: '🤝', title: 'Annuaire des pros', desc: 'Vétérinaires, associations, toiletteurs, éducateurs — retrouvez tous les acteurs animaliers du 974 en un endroit.' },
+            ].map(f => (
+              <div key={f.title} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex gap-4">
+                <span className="text-3xl shrink-0">{f.icon}</span>
+                <div>
+                  <h3 className="font-bold text-white mb-1">{f.title}</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ANNUAIRE TEASER ───────────────────────────────────── */}
+      <section className="py-16 bg-blue-50 border-y border-blue-100">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center gap-8">
+          <div className="flex-1 space-y-4">
+            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full">
+              📖 Annuaire 974
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-900">Tous les acteurs animaliers de La Réunion</h2>
+            <p className="text-slate-600 leading-relaxed">
+              Vétérinaires & santé, associations & refuges, garde & pensions, éducation, toilettage, animaleries — retrouvez en un clic les professionnels et associations près de chez vous.
+            </p>
+            <Link href="/annuaire"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
+              Consulter l'annuaire <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="hidden sm:grid grid-cols-2 gap-3 shrink-0 w-64">
+            {['🩺 Vétérinaires', '❤️ Refuges', '🏠 Pensions', '✂️ Toilettage', '🎓 Éducation', '🛒 Animaleries'].map(l => (
+              <div key={l} className="bg-white border border-blue-100 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 text-center shadow-sm">{l}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA FINAL ────────────────────────────────────────── */}
+      <section className="py-16">
+        <div className="max-w-2xl mx-auto px-4 text-center space-y-4">
+          <div className="text-5xl">🐾</div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Chaque signalement compte</h2>
+          <p className="text-slate-500 leading-relaxed">
+            Rejoignez la communauté SauvCœur et aidez les animaux de La Réunion à retrouver leur famille — ou à en trouver une nouvelle.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Link href="/animaux/nouveau"
+              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3.5 rounded-2xl transition-colors">
+              <PawPrint className="h-5 w-5" />
+              Publier une annonce
+            </Link>
+            <Link href="/animaux"
+              className="flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-emerald-400 text-slate-700 font-semibold px-6 py-3.5 rounded-2xl transition-colors">
+              <Search className="h-5 w-5" />
+              Consulter les annonces
+            </Link>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  )
+}
