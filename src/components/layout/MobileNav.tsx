@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Search, Heart, BookOpen, User, LogIn, Plus, PawPrint, Info } from 'lucide-react'
+import { Menu, X, Search, Heart, BookOpen, LogIn, Plus, PawPrint } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 
 const NAV = [
   { href: '/animaux?status=lost',     icon: Search,   label: 'Perdu / Trouvé ?', sub: 'Signaler un animal disparu',      color: 'text-orange-500',  hoverBg: 'hover:bg-orange-50', hoverText: 'hover:text-orange-600' },
   { href: '/animaux?status=to_adopt', icon: Heart,    label: 'À adopter',         sub: 'Trouver un compagnon à La Réunion', color: 'text-emerald-500', hoverBg: 'hover:bg-emerald-50', hoverText: 'hover:text-emerald-600' },
   { href: '/annuaire',                icon: BookOpen, label: 'Annuaire 974',      sub: 'Vétérinaires, pros vérifiés',      color: 'text-blue-500',    hoverBg: 'hover:bg-blue-50', hoverText: 'hover:text-blue-600' },
-  { href: '/presentation',            icon: Info,     label: 'À propos',           sub: 'Découvrir le projet SauvCœur',     color: 'text-slate-400',   hoverBg: 'hover:bg-slate-50', hoverText: 'hover:text-slate-700' },
 ]
 
 export default function MobileNav() {

@@ -55,9 +55,9 @@ const ADMIN_KEY   = 'sauvcoeur_admin'
 const PROS_KEY    = 'sauvcoeur_pros'
 
 const DEFAULT_BANNERS: StoredBanner[] = [
-  { id: 'b1', slot: 'Liste annonces — haut', url: 'https://facebook.com/sauvcoeur974', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
-  { id: 'b2', slot: 'Détail annonce — haut', url: 'https://facebook.com/sauvcoeur974', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
-  { id: 'b3', slot: 'Détail annonce — bas',  url: 'https://facebook.com/sauvcoeur974', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
+  { id: 'b1', slot: 'Liste annonces — haut', url: 'https://www.facebook.com/SauvCoeurReunion', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
+  { id: 'b2', slot: 'Détail annonce — haut', url: 'https://www.facebook.com/SauvCoeurReunion', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
+  { id: 'b3', slot: 'Détail annonce — bas',  url: 'https://www.facebook.com/SauvCoeurReunion', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
 ]
 
 function read<T>(key: string, fallback: T): T {

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Search, Heart, BookOpen, Users, ChevronRight } from 'lucide-react'
+import { Search, Heart, BookOpen, ChevronRight } from 'lucide-react'
 import { NewsletterForm } from '@/components/home/NewsletterForm'
 import ReunionMapClient from '@/components/map/ReunionMapClient'
 
@@ -173,15 +173,11 @@ export default function HomePage() {
           <p className="font-bold text-xl">Rejoignez notre communauté</p>
           <p className="text-slate-400 text-sm">Plus de 1 200 réunionnais mobilisés pour la cause animale</p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <a href="https://facebook.com/sauvcoeur974" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.facebook.com/SauvCoeurReunion" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
               <IconFacebook className="h-4 w-4" /> Notre page Facebook
             </a>
-            <a href="https://facebook.com/groups/sauvcoeur974" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
-              <Users className="h-4 w-4" /> Notre groupe Facebook
-            </a>
-            <a href="https://instagram.com/sauvcoeur974" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
               <IconInstagram className="h-4 w-4" /> Instagram
             </a>

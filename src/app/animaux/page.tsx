@@ -46,7 +46,7 @@ function AdBanner() {
     const b = getBanners().find(x => x.slot.includes('Liste') && x.active)
     if (b) setBanner(b)
   }, [])
-  const url  = banner?.url  ?? 'https://facebook.com/sauvcoeur974'
+  const url  = banner?.url  ?? 'https://www.facebook.com/SauvCoeurReunion'
   const text = banner?.text ?? 'Votre publicité ici — Soutenez SauvCœur.re'
   if (banner?.image) {
     return (

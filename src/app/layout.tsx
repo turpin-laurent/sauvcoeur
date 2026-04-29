@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import Link from 'next/link'
-import { PawPrint, Search, Heart, BookOpen, Plus, Info } from 'lucide-react'
+import { PawPrint, Search, Heart, BookOpen, Plus } from 'lucide-react'
 import { AuthProvider } from '@/lib/auth/context'
 import MobileNav from '@/components/layout/MobileNav'
 
@@ -68,11 +68,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <BookOpen className="h-4 w-4 text-blue-400 group-hover:text-blue-600" />
                 Annuaire 974
               </Link>
-              <Link href="/presentation"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors group">
-                <Info className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
-                À propos
-              </Link>
             </nav>
 
             {/* Actions desktop */}
@@ -123,11 +118,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 La 1ère plateforme réunionnaise pour retrouver, signaler, adopter et accompagner les animaux.
               </p>
               <div className="flex gap-3 pt-1">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer"
+                <a href="https://www.facebook.com/SauvCoeurReunion" target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                   <IconFacebook className="h-3.5 w-3.5" /> Facebook
                 </a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
+                <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 bg-pink-600 hover:bg-pink-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                   <IconInstagram className="h-3.5 w-3.5" /> Instagram
                 </a>
@@ -152,11 +147,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/faq" className="hover:text-emerald-400 transition-colors">Foire aux questions</Link></li>
                 <li><Link href="/mentions-legales" className="hover:text-emerald-400 transition-colors">Mentions légales</Link></li>
                 <li><Link href="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link></li>
-                <li>
-                  <Link href="/admin/login" className="text-slate-600 hover:text-slate-400 transition-colors text-xs">
-                    Administration
-                  </Link>
-                </li>
               </ul>
             </div>
 
@@ -165,19 +155,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <p className="font-semibold text-white text-sm">Nos réseaux</p>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href="https://facebook.com/sauvcoeur974" target="_blank" rel="noopener noreferrer"
+                  <a href="https://www.facebook.com/SauvCoeurReunion" target="_blank" rel="noopener noreferrer"
                     className="hover:text-emerald-400 transition-colors flex items-center gap-2">
                     <IconFacebook className="h-3.5 w-3.5" /> Notre page Facebook
                   </a>
                 </li>
                 <li>
-                  <a href="https://facebook.com/groups/sauvcoeur974" target="_blank" rel="noopener noreferrer"
-                    className="hover:text-emerald-400 transition-colors flex items-center gap-2">
-                    <IconFacebook className="h-3.5 w-3.5" /> Notre groupe Facebook
-                  </a>
-                </li>
-                <li>
-                  <a href="https://instagram.com/sauvcoeur974" target="_blank" rel="noopener noreferrer"
+                  <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
                     className="hover:text-emerald-400 transition-colors flex items-center gap-2">
                     <IconInstagram className="h-3.5 w-3.5" /> Notre Instagram
                   </a>

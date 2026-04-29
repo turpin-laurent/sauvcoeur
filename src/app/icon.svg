@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="8" fill="#059669"/>
+  <!-- Coussinet central -->
+  <ellipse cx="16" cy="19" rx="6" ry="5" fill="white"/>
+  <!-- Petit coussinet haut gauche -->
+  <ellipse cx="9" cy="13" rx="2.5" ry="3" fill="white"/>
+  <!-- Petit coussinet haut droit -->
+  <ellipse cx="23" cy="13" rx="2.5" ry="3" fill="white"/>
+  <!-- Petit coussinet milieu gauche -->
+  <ellipse cx="12" cy="11" rx="2.2" ry="2.8" fill="white"/>
+  <!-- Petit coussinet milieu droit -->
+  <ellipse cx="20" cy="11" rx="2.2" ry="2.8" fill="white"/>
+</svg>
