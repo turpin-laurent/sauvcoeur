@@ -125,7 +125,9 @@ function AnimalCard({ animal }: { animal: PublicAnimal }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────
-export default function AnimauxPage() {
+import { Suspense } from 'react'
+
+function AnimauxPageInner() {
   const sp = useSearchParams()
   const defaultStatus = (sp.get('status') ?? '') as AnimalStatus | ''
   const [status,  setStatus]  = useState<AnimalStatus | ''>(defaultStatus)
@@ -383,5 +385,23 @@ export default function AnimauxPage() {
       )}
 
     </main>
+  )
+}
+
+mport { Suspense } from 'react'
+
+function AnimauxPageInner() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Chargement…</div>}>
+      <AnimauxPageInner />
+    </Suspense>
+  )
+}
+
+export default function AnimauxPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Chargement…</div>}>
+      <AnimauxPageInner />
+    </Suspense>
   )
 }
