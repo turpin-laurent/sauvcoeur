@@ -294,7 +294,7 @@ export default function PresentationPage() {
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm">
                 <IconFacebook className="h-4 w-4" /> Notre page Facebook
               </a>
-              <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
+              <a href="https://www.instagram.com/sauvcoeurreunion/" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm">
                 <IconInstagram className="h-4 w-4" /> Instagram
               </a>

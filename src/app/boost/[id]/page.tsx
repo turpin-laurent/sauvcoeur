@@ -1,67 +1,97 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { CheckCircle2, Lock, Zap, ArrowLeft } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { CheckCircle2, Zap, ArrowLeft, CreditCard, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { getAnimalById, updateAnimal } from '@/lib/animals/store'
 import type { StoredAnimal } from '@/lib/animals/store'
 
 export default function BoostPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params)
-  const router  = useRouter()
+  const { id }        = React.use(params)
+  const router        = useRouter()
+  const searchParams  = useSearchParams()
 
-  const [animal,  setAnimal]  = useState<StoredAnimal | null>(null)
-  const [paid,    setPaid]    = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [card,    setCard]    = useState({ number: '', expiry: '', cvv: '', name: '' })
-  const [error,   setError]   = useState('')
+  const [animal,   setAnimal]   = useState<StoredAnimal | null>(null)
+  const [paid,     setPaid]     = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [error,    setError]    = useState('')
 
+  // Charger l'animal
   useEffect(() => {
     const a = getAnimalById(id)
     if (a) setAnimal(a)
-    else {
-      // Animal introuvable → retour à la liste sans erreur
-      router.replace('/animaux')
-    }
+    else router.replace('/animaux')
   }, [id, router])
 
-  const handlePay = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    // Validation basique
-    const clean = card.number.replace(/\s/g, '')
-    if (clean.length < 16) { setError('Numéro de carte invalide.'); return }
-    if (!card.expiry.match(/^\d{2}\/\d{2}$/)) { setError('Date d\'expiration invalide (MM/AA).'); return }
-    if (card.cvv.length < 3) { setError('CVV invalide.'); return }
-    if (!card.name.trim()) { setError('Nom sur la carte requis.'); return }
+  // Retour de Mollie — vérifier le paiement
+  useEffect(() => {
+    const boostParam  = searchParams.get('boost')
+    const paymentId   = searchParams.get('payment_id')
 
+    if (boostParam === 'success' && paymentId) {
+      setChecking(true)
+      fetch(`/api/mollie/verify?id=${paymentId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.paid) {
+            updateAnimal(id, { boosted: true })
+            setPaid(true)
+          } else {
+            setError('Le paiement n\'a pas été confirmé. Contactez-nous si vous avez été débité.')
+          }
+        })
+        .catch(() => setError('Impossible de vérifier le paiement. Contactez-nous.'))
+        .finally(() => setChecking(false))
+    }
+  }, [id, searchParams])
+
+  const handleBoost = async () => {
     setLoading(true)
-    await new Promise(r => setTimeout(r, 1500)) // simulation paiement
-    updateAnimal(id, { boosted: true })
-    if (typeof window !== 'undefined') sessionStorage.removeItem('sc_draft_id')
-    setPaid(true)
-    setLoading(false)
+    setError('')
+    try {
+      const res = await fetch('/api/mollie/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          animalId:    id,
+          amount:      '4.99',
+          description: `Boost annonce SauvCoeur.re — ${animal?.name ?? id}`,
+        }),
+      })
+      const data = await res.json()
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl
+      } else {
+        setError(data.error ?? 'Impossible de démarrer le paiement. Réessayez.')
+        setLoading(false)
+      }
+    } catch {
+      setError('Erreur réseau. Réessayez.')
+      setLoading(false)
+    }
   }
 
-  const formatCard = (val: string) =>
-    val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+  // ── Vérification en cours ──────────────────────────────────────
+  if (checking) return (
+    <main className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+      <Loader2 className="h-12 w-12 text-emerald-500 mx-auto animate-spin" />
+      <p className="font-semibold text-slate-700">Vérification du paiement…</p>
+    </main>
+  )
 
-  const formatExpiry = (val: string) => {
-    const clean = val.replace(/\D/g, '').slice(0, 4)
-    return clean.length > 2 ? `${clean.slice(0,2)}/${clean.slice(2)}` : clean
-  }
-
+  // ── Boost confirmé ─────────────────────────────────────────────
   if (paid) return (
     <main className="max-w-md mx-auto px-4 py-20 text-center space-y-5">
-      <Zap className="h-16 w-16 text-orange-500 mx-auto" />
+      <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto" />
       <h1 className="text-2xl font-bold text-slate-900">Boost activé ! ⚡</h1>
       <p className="text-slate-500">
-        Votre annonce <strong>{animal?.name ?? 'Votre animal'}</strong> est maintenant boostée.<br />
+        Votre annonce <strong>{animal?.name ?? 'votre animal'}</strong> est maintenant boostée.<br />
         Elle sera mise en avant dès validation par notre équipe.
       </p>
       <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-sm text-orange-700 space-y-1">
-        <p>✅ Partage en story Facebook sous 24h</p>
+        <p>✅ Story Facebook sous 24h</p>
         <p>✅ Badge ⚡ visible sur votre annonce</p>
         <p>✅ Priorité en tête des résultats</p>
       </div>
@@ -78,10 +108,11 @@ export default function BoostPage({ params }: { params: Promise<{ id: string }> 
     </main>
   )
 
+  // ── Page de boost ──────────────────────────────────────────────
   return (
     <main className="max-w-md mx-auto px-4 py-10 space-y-6">
-      <Link href="/animaux" className="flex items-center gap-1 text-sm text-slate-500 hover:text-emerald-600">
-        <ArrowLeft className="h-4 w-4" /> Retour
+      <Link href={`/animaux/${id}`} className="flex items-center gap-1 text-sm text-slate-500 hover:text-emerald-600">
+        <ArrowLeft className="h-4 w-4" /> Retour à l'annonce
       </Link>
 
       {/* Résumé */}
@@ -104,64 +135,33 @@ export default function BoostPage({ params }: { params: Promise<{ id: string }> 
         </ul>
       </div>
 
-      {/* Formulaire de paiement */}
-      <form onSubmit={handlePay} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Lock className="h-4 w-4 text-slate-400" />
-          <p className="text-sm font-semibold text-slate-700">Paiement sécurisé</p>
-          <div className="ml-auto flex gap-1.5 items-center">
-            <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded">VISA</span>
-            <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">MC</span>
-          </div>
+      {/* Bouton paiement Mollie */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <CreditCard className="h-4 w-4" />
+          Paiement sécurisé via <strong className="text-slate-700">Mollie</strong>
         </div>
-
-        <div>
-          <label className="text-sm font-medium text-slate-700 block mb-1">Numéro de carte</label>
-          <input value={card.number}
-            onChange={e => setCard(c => ({ ...c, number: formatCard(e.target.value) }))}
-            placeholder="1234 5678 9012 3456" maxLength={19}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm font-medium text-slate-700 block mb-1">Date d'expiration</label>
-            <input value={card.expiry}
-              onChange={e => setCard(c => ({ ...c, expiry: formatExpiry(e.target.value) }))}
-              placeholder="MM/AA" maxLength={5}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700 block mb-1">CVV</label>
-            <input value={card.cvv}
-              onChange={e => setCard(c => ({ ...c, cvv: e.target.value.replace(/\D/g,'').slice(0,4) }))}
-              placeholder="123" maxLength={4}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-slate-700 block mb-1">Nom sur la carte</label>
-          <input value={card.name}
-            onChange={e => setCard(c => ({ ...c, name: e.target.value }))}
-            placeholder="PRÉNOM NOM"
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none focus:ring-2 focus:ring-emerald-500" />
-        </div>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Vous allez être redirigé vers la page de paiement sécurisée Mollie.
+          Cartes acceptées : Visa, Mastercard, iDEAL, Bancontact.
+        </p>
 
         {error && (
           <p className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</p>
         )}
 
-        <button type="submit" disabled={loading}
+        <button onClick={handleBoost} disabled={loading}
           className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-base">
-          <Zap className="h-5 w-5" />
-          {loading ? 'Traitement en cours…' : 'Payer 4,99 € et booster'}
+          {loading
+            ? <><Loader2 className="h-5 w-5 animate-spin" /> Redirection…</>
+            : <><Zap className="h-5 w-5" /> Payer 4,99 € et booster</>
+          }
         </button>
 
         <p className="text-center text-xs text-slate-400">
-          🔒 Paiement 100% sécurisé · Aucune donnée bancaire stockée
+          🔒 Paiement 100% sécurisé · Aucune donnée bancaire stockée chez nous
         </p>
-      </form>
+      </div>
     </main>
   )
 }

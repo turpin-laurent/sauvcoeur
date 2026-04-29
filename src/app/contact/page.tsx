@@ -4,12 +4,28 @@ import { useState } from 'react'
 import { Mail, MessageCircle, CheckCircle2 } from 'lucide-react'
 
 export default function ContactPage() {
-  const [sent, setSent] = useState(false)
+  const [sent,    setSent]    = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSent(true)
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error()
+      setSent(true)
+    } catch {
+      setError('Une erreur est survenue. Réessayez ou écrivez-nous directement.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -79,9 +95,12 @@ export default function ContactPage() {
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               placeholder="Décrivez votre demande…" />
           </div>
-          <button type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition-colors">
-            Envoyer le message
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</p>
+          )}
+          <button type="submit" disabled={loading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors">
+            {loading ? 'Envoi en cours…' : 'Envoyer le message'}
           </button>
         </form>
       )}

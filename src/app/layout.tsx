@@ -122,7 +122,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                   <IconFacebook className="h-3.5 w-3.5" /> Facebook
                 </a>
-                <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
+                <a href="https://www.instagram.com/sauvcoeurreunion/" target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 bg-pink-600 hover:bg-pink-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                   <IconInstagram className="h-3.5 w-3.5" /> Instagram
                 </a>
@@ -161,7 +161,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </a>
                 </li>
                 <li>
-                  <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
+                  <a href="https://www.instagram.com/sauvcoeurreunion/" target="_blank" rel="noopener noreferrer"
                     className="hover:text-emerald-400 transition-colors flex items-center gap-2">
                     <IconInstagram className="h-3.5 w-3.5" /> Notre Instagram
                   </a>

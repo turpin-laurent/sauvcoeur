@@ -27,7 +27,7 @@ export default function HomePage() {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
             Mobilisez des milliers de personnes<br className="hidden sm:block" />
             {' '}<span className="text-emerald-200">à la recherche de votre animal</span><br className="hidden sm:block" />
-            en 5 minutes !
+            {' '}en 5 minutes !
           </h1>
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
             La 1ère plateforme réunionnaise pour retrouver, signaler, adopter et accompagner les animaux de La Réunion (974).
@@ -177,7 +177,7 @@ export default function HomePage() {
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
               <IconFacebook className="h-4 w-4" /> Notre page Facebook
             </a>
-            <a href="https://www.instagram.com/sauvcoeur.re/" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.instagram.com/sauvcoeurreunion/" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
               <IconInstagram className="h-4 w-4" /> Instagram
             </a>

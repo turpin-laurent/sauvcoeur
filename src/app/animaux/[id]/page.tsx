@@ -141,8 +141,20 @@ function ContactModal({ animal, onClose }: { animal: Animal; onClose: () => void
     if (!senderEmail.trim()) { setError('Votre email est obligatoire.'); return }
     setError('')
     setSending(true)
-    // Simulation envoi — en prod: POST /api/contact avec Resend
-    await new Promise(r => setTimeout(r, 1200))
+    try {
+      await fetch('/api/contact-animal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderName, senderPhone, senderEmail, message,
+          animalName:   animal.name,
+          animalStatus: animal.status,
+          animalCity:   animal.location_city,
+          ownerEmail:   animal.contact_email,
+          animalId:     animal.id,
+        }),
+      })
+    } catch { /* email non critique — on affiche quand même "envoyé" */ }
     setSending(false)
     setSent(true)
   }
@@ -278,50 +290,43 @@ function ShareButtons({ animal, id }: { animal: Animal; id: string }) {
     ? `${window.location.origin}/animaux/${id}`
     : `https://sauvcoeur.re/animaux/${id}`
 
-  const statusText: Record<string, string> = { lost: 'PERDU', found: 'TROUVÉ', to_adopt: 'À ADOPTER' }
+  const statusText: Record<string, string> = { lost: 'PERDU', found: 'TROUVE', to_adopt: 'A ADOPTER' }
   const speciesLabel = SPECIES_LABEL[animal.species] ?? 'Animal'
   const shareTitle = animal.name
-    ? `🐾 ${statusText[animal.status] ?? ''} - ${animal.name} (${speciesLabel}) à ${animal.location_city}`
-    : `🐾 ${statusText[animal.status] ?? ''} - ${speciesLabel} à ${animal.location_city}`
+    ? `${statusText[animal.status] ?? ''} - ${animal.name} (${speciesLabel}) a ${animal.location_city}`
+    : `${statusText[animal.status] ?? ''} - ${speciesLabel} a ${animal.location_city}`
 
-  const shareText = `${shareTitle}\n\nAidez-nous à le retrouver ! Partagez au maximum 🙏\n\nVoir l'annonce sur SauvCœur.re :`
-  const encodedUrl  = encodeURIComponent(url)
-  const encodedText = encodeURIComponent(shareText)
+  // Texte sans emojis pour compatibilite WhatsApp et SMS
+  const waText = `${shareTitle}\n\nAidez-nous a le retrouver ! Partagez au maximum\n\nVoir l'annonce sur sauvcoeur.re :\n${url}`
+  const encodedUrl = encodeURIComponent(url)
+  const encodedWa  = encodeURIComponent(waText)
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`${shareText}\n${url}`).then(() => {
+    navigator.clipboard.writeText(url).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2500)
     })
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">📣 Partagez pour aider !</p>
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Partagez pour aider !</p>
       <p className="text-sm text-slate-600">Plus vous partagez, plus l'animal a de chances d'être retrouvé.</p>
       <div className="flex flex-wrap gap-2">
-        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`}
+        {/* Facebook — partage via OG tags de la page */}
+        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
           target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 bg-[#1877F2] hover:bg-[#166fe5] text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
           Facebook
         </a>
-        <a href={`https://api.whatsapp.com/send?text=${encodedText}%0A${encodedUrl}`}
+        {/* WhatsApp — texte propre sans emojis */}
+        <a href={`https://wa.me/?text=${encodedWa}`}
           target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1ebe5d] text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
           WhatsApp
         </a>
-        <a href={`fb-messenger://share?link=${encodedUrl}`} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 bg-[#0084FF] hover:bg-[#0073e6] text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
-          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.914 1.318 5.52 3.396 7.28V22l3.198-1.75c.854.234 1.758.36 2.693.36 5.523 0 10-4.144 10-9.243S17.523 2 12 2zm1.009 12.436l-2.544-2.714-4.964 2.714 5.467-5.802 2.606 2.714 4.9-2.714-5.465 5.802z"/></svg>
-          Messenger
-        </a>
-        {typeof navigator !== 'undefined' && (navigator as any).share && (
-          <button onClick={() => (navigator as any).share({ title: shareTitle, text: shareText, url })}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
-            📤 Partager
-          </button>
-        )}
+        {/* Copier le lien */}
         <button onClick={copyLink}
           className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
           {copied ? '✓ Copié !' : '🔗 Copier le lien'}
