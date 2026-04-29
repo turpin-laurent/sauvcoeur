@@ -1,9 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-export const fetchCache = 'force-no-store'
-
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -127,9 +124,7 @@ function AnimalCard({ animal }: { animal: PublicAnimal }) {
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────
-import { Suspense } from 'react'
-
+// ── Page intérieure ───────────────────────────────────────────
 function AnimauxPageInner() {
   const sp = useSearchParams()
   const defaultStatus = (sp.get('status') ?? '') as AnimalStatus | ''
@@ -161,7 +156,6 @@ function AnimauxPageInner() {
   }, [])
 
   const filtered = useMemo(() => allAnimals.filter(a => {
-    // ⚠️ Ne jamais afficher les annonces non approuvées sur la liste publique
     if (a.moderation_status !== 'approved') return false
     if (status && a.status !== status) return false
     if (city    && a.location_city !== city)   return false
@@ -180,7 +174,6 @@ function AnimauxPageInner() {
     ...filtered.filter(a => !(a as any).boosted && !(a as any).pinned),
   ], [filtered])
 
-  // Reset page on filter change
   useEffect(() => { setPage(1) }, [status, city, species, query])
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
@@ -216,7 +209,6 @@ function AnimauxPageInner() {
   return (
     <main className="max-w-5xl mx-auto px-3 sm:px-4 py-5 sm:py-8 space-y-4 sm:space-y-6">
 
-      {/* Titre + toggle vue */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-lg sm:text-xl font-bold text-slate-900">{pageTitle}</h1>
@@ -224,20 +216,14 @@ function AnimauxPageInner() {
             {filtered.length} annonce{filtered.length > 1 ? 's' : ''} à La Réunion
           </p>
         </div>
-
-        {/* Toggle Liste / Carte */}
         <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-0.5">
-          <button
-            onClick={() => setView('list')}
-            className={['flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all', view === 'list' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'].join(' ')}
-          >
+          <button onClick={() => setView('list')}
+            className={['flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all', view === 'list' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'].join(' ')}>
             <LayoutList className="h-4 w-4" />
             <span className="hidden xs:inline sm:inline">Liste</span>
           </button>
-          <button
-            onClick={() => setView('map')}
-            className={['flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all', view === 'map' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'].join(' ')}
-          >
+          <button onClick={() => setView('map')}
+            className={['flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all', view === 'map' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'].join(' ')}>
             <Map className="h-4 w-4" />
             <span className="hidden xs:inline sm:inline">Carte</span>
           </button>
@@ -246,7 +232,6 @@ function AnimauxPageInner() {
 
       <AdBanner />
 
-      {/* Barre de recherche + filtres */}
       <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 space-y-3 shadow-sm">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -256,7 +241,6 @@ function AnimauxPageInner() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {/* Statut */}
           <div className="flex gap-1">
             {[
               { v: '' as const,         l: 'Tous' },
@@ -271,7 +255,6 @@ function AnimauxPageInner() {
             ))}
           </div>
 
-          {/* Espèce — texte uniquement, sans emoji */}
           <div className="flex gap-1">
             {[
               { v: '' as const,      l: 'Tous' },
@@ -286,7 +269,6 @@ function AnimauxPageInner() {
             ))}
           </div>
 
-          {/* Commune */}
           <select value={city} onChange={e => setCity(e.target.value)}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
             <option value="">Toutes les communes</option>
@@ -302,7 +284,6 @@ function AnimauxPageInner() {
         )}
       </div>
 
-      {/* ── VUE CARTE (plein écran) ── */}
       {view === 'map' && (
         <div className="space-y-3">
           <MapLegend />
@@ -317,7 +298,6 @@ function AnimauxPageInner() {
         </div>
       )}
 
-      {/* ── VUE LISTE ── */}
       {view === 'list' && (
         <>
           {sorted.length === 0 ? (
@@ -328,7 +308,6 @@ function AnimauxPageInner() {
             </div>
           ) : (
             <>
-              {/* Grille d'annonces (page courante) */}
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {paginated.map((animal, i) => (
                   <React.Fragment key={animal.id}>
@@ -342,7 +321,6 @@ function AnimauxPageInner() {
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-3 pt-2">
                   <button
@@ -363,7 +341,6 @@ function AnimauxPageInner() {
                 </div>
               )}
 
-              {/* ── Carte en grand sous les annonces ── */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-semibold text-slate-800 text-base flex items-center gap-2">
@@ -391,16 +368,7 @@ function AnimauxPageInner() {
   )
 }
 
-mport { Suspense } from 'react'
-
-function AnimauxPageInner() {
-  return (
-    <Suspense fallback={<div className="p-8 text-center text-slate-400">Chargement…</div>}>
-      <AnimauxPageInner />
-    </Suspense>
-  )
-}
-
+// ── Export avec Suspense ──────────────────────────────────────
 export default function AnimauxPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-400">Chargement…</div>}>
