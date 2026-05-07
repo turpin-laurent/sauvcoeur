@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { Search, Heart, BookOpen, ChevronRight } from 'lucide-react'
+import { Search, ChevronRight } from 'lucide-react'
 import { NewsletterForm } from '@/components/home/NewsletterForm'
-import { StatsBar } from '@/components/home/StatsBar'
+import { RecentAnimals } from '@/components/home/RecentAnimals'
 import ReunionMapClient from '@/components/map/ReunionMapClient'
 
 function IconFacebook({ className }: { className?: string }) {
@@ -46,8 +46,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS (temps réel) ── */}
-      <StatsBar />
+      {/* ── DERNIÈRES ANNONCES ── */}
+      <RecentAnimals />
 
       {/* ── RUBRIQUES ── */}
       <section className="max-w-5xl mx-auto px-4 py-8 sm:py-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
