@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Heart, Search, MapPin, Clock, PawPrint, Star, LayoutList, Map, ChevronLeft, ChevronRight } from 'lucide-react'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
 import type { PublicAnimal, AnimalStatus, AnimalSpecies } from '@/types'
+import { NewsletterBanner } from '@/components/home/NewsletterBanner'
 
 const ReunionMap = dynamic(() => import('@/components/map/ReunionMap'), { ssr: false })
 
@@ -414,6 +415,7 @@ function AnimauxPageInner() {
           )}
 
           <AdBanner />
+          <NewsletterBanner context="animaux" />
         </>
       )}
 

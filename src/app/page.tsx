@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Search, Heart, BookOpen, ChevronRight } from 'lucide-react'
 import { NewsletterForm } from '@/components/home/NewsletterForm'
+import { StatsBar } from '@/components/home/StatsBar'
 import ReunionMapClient from '@/components/map/ReunionMapClient'
 
 function IconFacebook({ className }: { className?: string }) {
@@ -45,22 +46,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS ── */}
-      <section className="bg-white border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-center">
-          {[
-            { n: '24', l: 'Animaux retrouvés' },
-            { n: '19', l: 'Annonces actives' },
-            { n: '13', l: 'Membres inscrits' },
-            { n: '22', l: 'Communes couvertes' },
-          ].map(({ n, l }) => (
-            <div key={l}>
-              <p className="text-3xl font-bold text-emerald-600">{n}</p>
-              <p className="text-sm text-slate-500 mt-1">{l}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ── STATS (temps réel) ── */}
+      <StatsBar />
 
       {/* ── RUBRIQUES ── */}
       <section className="max-w-5xl mx-auto px-4 py-8 sm:py-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">

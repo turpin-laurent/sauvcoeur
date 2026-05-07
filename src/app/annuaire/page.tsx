@@ -7,6 +7,7 @@ import {
   Building2, Stethoscope, GraduationCap, Home, Scissors,
   Heart, ShoppingBag, Smile, Camera, ExternalLink,
 } from 'lucide-react'
+import { NewsletterBanner } from '@/components/home/NewsletterBanner'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
 import type { StoredPro } from '@/lib/animals/store'
 
@@ -551,6 +552,8 @@ export default function AnnuairePage() {
           <Plus className="h-4 w-4" /> Inscrire mon établissement
         </button>
       </div>
+
+      <NewsletterBanner context="annuaire" />
     </main>
   )
 }
