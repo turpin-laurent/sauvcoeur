@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { MapPin, Heart, Clock, ArrowLeft, MessageCircle, CheckCircle2, X, ChevronLeft, ChevronRight, Phone, Send, Calendar, Navigation } from 'lucide-react'
-import { getBanners } from '@/lib/animals/store'
 import { useAuth } from '@/lib/auth/context'
 
 interface Animal {
@@ -43,15 +42,13 @@ function formatDateTime(iso: string) {
 function AdBanner({ slot }: { slot: 'haut' | 'bas' }) {
   const [banner, setBanner] = useState<{ url: string; text: string; image?: string } | null>(null)
   useEffect(() => {
-    const banners = getBanners()
-    const b = banners.find(x => x.slot.includes(slot === 'haut' ? 'haut' : 'bas') && x.active)
-    if (b) {
-      setBanner(b as any)
-      try {
-        const key = `sc_banner_imp_${b.id}`
-        localStorage.setItem(key, String(parseInt(localStorage.getItem(key) ?? '0') + 1))
-      } catch { /* */ }
-    }
+    fetch('/api/banners')
+      .then(r => r.json())
+      .then((banners: { id: string; slot: string; active: boolean; url: string; text: string; image?: string }[]) => {
+        const b = banners.find(x => x.slot.includes(slot === 'haut' ? 'haut' : 'bas') && x.active)
+        if (b) setBanner(b)
+      })
+      .catch(() => {})
   }, [slot])
   if (!banner) return null
   return (

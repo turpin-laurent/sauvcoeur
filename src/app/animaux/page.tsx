@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Heart, Search, MapPin, Clock, PawPrint, Star, LayoutList, Map, ChevronLeft, ChevronRight } from 'lucide-react'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
-import { getBanners } from '@/lib/animals/store'
 import type { PublicAnimal, AnimalStatus, AnimalSpecies } from '@/types'
 
 const ReunionMap = dynamic(() => import('@/components/map/ReunionMap'), { ssr: false })
@@ -37,8 +36,13 @@ function timeAgo(iso: string) {
 function AdBanner() {
   const [banner, setBanner] = useState<{ url: string; text: string; image?: string } | null>(null)
   useEffect(() => {
-    const b = getBanners().find(x => x.slot.includes('Liste') && x.active)
-    if (b) setBanner(b)
+    fetch('/api/banners')
+      .then(r => r.json())
+      .then((banners: { slot: string; active: boolean; url: string; text: string; image?: string }[]) => {
+        const b = banners.find(x => x.slot.includes('Liste') && x.active)
+        if (b) setBanner(b)
+      })
+      .catch(() => {})
   }, [])
   const url  = banner?.url  ?? 'https://www.facebook.com/SauvCoeurReunion'
   const text = banner?.text ?? 'Votre publicité ici — Soutenez SauvCœur.re'

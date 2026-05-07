@@ -1,25 +1,54 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { BadgeCheck, Phone, Globe, MapPin, Star, Plus, X, Send, Check, Building2, Stethoscope, GraduationCap, Home, Scissors, Heart, ShoppingBag, Smile } from 'lucide-react'
+import { BadgeCheck, Phone, Globe, MapPin, Star, Plus, X, Check, Building2, Stethoscope, GraduationCap, Home, Scissors, Heart, ShoppingBag, Smile } from 'lucide-react'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
 import type { StoredPro } from '@/lib/animals/store'
 
 // ── Configuration catégories ──────────────────────────────────
 const CATEGORIES: { id: string; label: string; icon: React.ReactNode; emoji: string }[] = [
-  { id: 'all',       label: 'Tous',                         icon: <Building2 className="h-4 w-4" />,    emoji: '🏢' },
-  { id: 'vet',       label: 'Vétérinaires & santé',         icon: <Stethoscope className="h-4 w-4" />,  emoji: '🩺' },
-  { id: 'rescue',    label: 'Associations & refuges',       icon: <Heart className="h-4 w-4" />,         emoji: '❤️' },
-  { id: 'sitter',    label: 'Garde & pensions',             icon: <Home className="h-4 w-4" />,          emoji: '🏠' },
-  { id: 'education', label: 'Éducation & comportement',    icon: <GraduationCap className="h-4 w-4" />, emoji: '🎓' },
-  { id: 'groomer',   label: 'Toilettage',                   icon: <Scissors className="h-4 w-4" />,      emoji: '✂️' },
-  { id: 'shop',      label: 'Animaleries & alimentation',   icon: <ShoppingBag className="h-4 w-4" />,   emoji: '🛒' },
-  { id: 'leisure',   label: 'Loisirs & services animaliers',icon: <Smile className="h-4 w-4" />,         emoji: '🎉' },
+  { id: 'all',       label: 'Tous',                          icon: <Building2 className="h-4 w-4" />,    emoji: '🏢' },
+  { id: 'vet',       label: 'Vétérinaires & santé',          icon: <Stethoscope className="h-4 w-4" />,  emoji: '🩺' },
+  { id: 'rescue',    label: 'Associations & refuges',        icon: <Heart className="h-4 w-4" />,         emoji: '❤️' },
+  { id: 'sitter',    label: 'Garde & pensions',              icon: <Home className="h-4 w-4" />,          emoji: '🏠' },
+  { id: 'education', label: 'Éducation & comportement',     icon: <GraduationCap className="h-4 w-4" />, emoji: '🎓' },
+  { id: 'groomer',   label: 'Toilettage',                    icon: <Scissors className="h-4 w-4" />,      emoji: '✂️' },
+  { id: 'shop',      label: 'Animaleries & alimentation',    icon: <ShoppingBag className="h-4 w-4" />,   emoji: '🛒' },
+  { id: 'leisure',   label: 'Loisirs & services',            icon: <Smile className="h-4 w-4" />,         emoji: '🎉' },
 ]
 
 const CAT_LABEL: Record<string, string> = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]))
 const CAT_EMOJI: Record<string, string> = Object.fromEntries(CATEGORIES.map(c => [c.id, c.emoji]))
 
+// ── Palettes couleurs par catégorie ──────────────────────────
+type CatPalette = {
+  iconBg: string
+  iconText: string
+  cardBorder: string
+  cardAccent: string    // bande gauche featured
+  pillActive: string
+  pillActiveTxt: string
+  badge: string
+}
+
+const CAT_PALETTE: Record<string, CatPalette> = {
+  vet:       { iconBg: 'bg-blue-100',   iconText: 'text-blue-600',   cardBorder: 'border-blue-100',   cardAccent: 'border-l-blue-400',   pillActive: 'bg-blue-600',   pillActiveTxt: 'text-white', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+  rescue:    { iconBg: 'bg-rose-100',   iconText: 'text-rose-600',   cardBorder: 'border-rose-100',   cardAccent: 'border-l-rose-400',   pillActive: 'bg-rose-500',   pillActiveTxt: 'text-white', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
+  sitter:    { iconBg: 'bg-violet-100', iconText: 'text-violet-600', cardBorder: 'border-violet-100', cardAccent: 'border-l-violet-400', pillActive: 'bg-violet-600', pillActiveTxt: 'text-white', badge: 'bg-violet-50 text-violet-700 border-violet-200' },
+  education: { iconBg: 'bg-amber-100',  iconText: 'text-amber-600',  cardBorder: 'border-amber-100',  cardAccent: 'border-l-amber-400',  pillActive: 'bg-amber-500',  pillActiveTxt: 'text-white', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  groomer:   { iconBg: 'bg-teal-100',   iconText: 'text-teal-600',   cardBorder: 'border-teal-100',   cardAccent: 'border-l-teal-400',   pillActive: 'bg-teal-600',   pillActiveTxt: 'text-white', badge: 'bg-teal-50 text-teal-700 border-teal-200' },
+  shop:      { iconBg: 'bg-orange-100', iconText: 'text-orange-600', cardBorder: 'border-orange-100', cardAccent: 'border-l-orange-400', pillActive: 'bg-orange-500', pillActiveTxt: 'text-white', badge: 'bg-orange-50 text-orange-700 border-orange-200' },
+  leisure:   { iconBg: 'bg-green-100',  iconText: 'text-green-600',  cardBorder: 'border-green-100',  cardAccent: 'border-l-green-400',  pillActive: 'bg-green-600',  pillActiveTxt: 'text-white', badge: 'bg-green-50 text-green-700 border-green-200' },
+}
+const DEFAULT_PALETTE: CatPalette = {
+  iconBg: 'bg-slate-100', iconText: 'text-slate-500', cardBorder: 'border-slate-200',
+  cardAccent: 'border-l-slate-400', pillActive: 'bg-slate-700', pillActiveTxt: 'text-white',
+  badge: 'bg-slate-50 text-slate-600 border-slate-200',
+}
+
+function getPalette(cat: string): CatPalette {
+  return CAT_PALETTE[cat] ?? DEFAULT_PALETTE
+}
 
 // ── Formulaire d'inscription ──────────────────────────────────
 function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -64,7 +93,7 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       email:          form.email,
       website:        form.website,
       description:    form.description,
-      is_verified:    false,    // sera validé par admin
+      is_verified:    false,
       is_featured:    featured,
       is_association: form.is_association,
       created_at:     new Date().toISOString(),
@@ -95,7 +124,6 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
         </div>
 
         <div className="p-6">
-          {/* ÉTAPE 1 — Formulaire */}
           {step === 'form' && (
             <div className="space-y-4">
               <div>
@@ -157,10 +185,9 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                   className="accent-blue-600 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-800">Je représente une association loi 1901</p>
-                  <p className="text-xs text-blue-600 mt-0.5">L'inscription de base est gratuite pour les associations. Des justificatifs pourront être demandés.</p>
+                  <p className="text-xs text-blue-600 mt-0.5">L'inscription de base est gratuite pour les associations.</p>
                 </div>
               </label>
-
               <button onClick={handleSubmitForm}
                 className="w-full bg-emerald-600 text-white rounded-xl py-3.5 font-semibold hover:bg-emerald-700 transition-colors">
                 Continuer →
@@ -168,12 +195,10 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
             </div>
           )}
 
-          {/* ÉTAPE 2 — Choix du plan */}
           {step === 'plan' && (
             <div className="space-y-4">
               <p className="text-sm text-slate-600">Choisissez votre formule pour <strong>{form.business_name}</strong> dans la catégorie <em>{CAT_LABEL[form.category]}</em>.</p>
 
-              {/* Gratuit */}
               <div className="border-2 border-slate-200 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -194,7 +219,6 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                 </button>
               </div>
 
-              {/* Featured — uniquement pour les pros (pas les assos) */}
               {!form.is_association && (
                 <div className="border-2 border-orange-400 rounded-2xl p-5 space-y-3 bg-orange-50">
                   <div className="flex items-center justify-between">
@@ -227,7 +251,6 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
             </div>
           )}
 
-          {/* ÉTAPE 3 — Confirmation */}
           {step === 'done' && (
             <div className="text-center space-y-4 py-4">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
@@ -246,63 +269,80 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   )
 }
 
-// ── Carte Pro ────────────────────────────────────────────────
-function ProCard({ pro }: { pro: StoredPro }) {
-  const emoji = CAT_EMOJI[pro.category] ?? '🐾'
+// ── Carte Pro (grille compacte) ───────────────────────────────
+function ProCard({ pro, onRegister }: { pro: StoredPro; onRegister: () => void }) {
+  const palette = getPalette(pro.category)
+  const emoji   = CAT_EMOJI[pro.category] ?? '🐾'
+
   return (
     <div className={[
-      'rounded-2xl border bg-white p-4 flex gap-4 hover:shadow-sm transition-shadow',
-      pro.is_featured ? 'border-orange-300 ring-1 ring-orange-200' : 'border-slate-200',
+      'group relative bg-white rounded-2xl border transition-all hover:shadow-md',
+      pro.is_featured
+        ? `${palette.cardBorder} border-l-4 ${palette.cardAccent}`
+        : 'border-slate-200',
     ].join(' ')}>
-      <div className={[
-        'h-14 w-14 shrink-0 rounded-xl flex items-center justify-center text-2xl',
-        pro.is_featured ? 'bg-orange-50' : 'bg-emerald-50',
-      ].join(' ')}>
-        {emoji}
-      </div>
+      {/* Badge featured */}
+      {pro.is_featured && (
+        <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+          <Star className="h-3 w-3 fill-orange-500 text-orange-500" /> En avant
+        </span>
+      )}
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 flex-wrap">
-          <div>
-            <p className="font-semibold text-slate-900 flex items-center gap-1.5 flex-wrap">
+      <div className="p-4">
+        {/* En-tête carte */}
+        <div className="flex items-start gap-3">
+          <div className={`h-12 w-12 shrink-0 rounded-xl flex items-center justify-center text-xl ${palette.iconBg}`}>
+            {emoji}
+          </div>
+          <div className="flex-1 min-w-0 pr-16">
+            <p className="font-semibold text-slate-900 text-sm leading-tight truncate">
               {pro.business_name}
-              {pro.is_featured && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
-                  <Star className="h-3 w-3 fill-orange-500 text-orange-500" /> En avant
-                </span>
-              )}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               {pro.is_verified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                  <BadgeCheck className="h-3.5 w-3.5" /> Vérifié
+                <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-px text-xs font-medium ${palette.badge}`}>
+                  <BadgeCheck className="h-3 w-3" /> Vérifié
                 </span>
               )}
               {pro.is_association && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                  🤝 Association
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-blue-200 bg-blue-50 px-1.5 py-px text-xs font-medium text-blue-700">
+                  🤝 Asso
                 </span>
               )}
-            </p>
-            <p className="text-sm text-slate-500">{CAT_LABEL[pro.category] ?? pro.category}</p>
+              <span className={`rounded-full border px-1.5 py-px text-xs ${palette.badge}`}>
+                {CAT_LABEL[pro.category] ?? pro.category}
+              </span>
+            </div>
           </div>
         </div>
 
+        {/* Description */}
         {pro.description && (
-          <p className="mt-1.5 text-sm text-slate-600 line-clamp-2">{pro.description}</p>
+          <p className="mt-2.5 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+            {pro.description}
+          </p>
         )}
 
-        <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-500">
+        {/* Infos contact */}
+        <div className="mt-3 flex flex-col gap-1.5 text-xs text-slate-500">
           {pro.city && (
-            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {pro.city}</span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+              {pro.city}
+            </span>
           )}
           {pro.phone && (
-            <a href={`tel:${pro.phone}`} className="flex items-center gap-1 hover:text-emerald-600 transition-colors">
-              <Phone className="h-3.5 w-3.5" /> {pro.phone}
+            <a href={`tel:${pro.phone}`}
+              className="flex items-center gap-1.5 hover:text-emerald-600 transition-colors">
+              <Phone className="h-3 w-3 shrink-0 text-slate-400" />
+              {pro.phone}
             </a>
           )}
           {pro.website && (
             <a href={pro.website} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-emerald-600 transition-colors">
-              <Globe className="h-3.5 w-3.5" /> Site web
+              className="flex items-center gap-1.5 hover:text-emerald-600 transition-colors truncate">
+              <Globe className="h-3 w-3 shrink-0 text-slate-400" />
+              <span className="truncate">{pro.website.replace(/^https?:\/\//, '')}</span>
             </a>
           )}
         </div>
@@ -326,9 +366,7 @@ export default function AnnuairePage() {
   const filtered = pros
     .filter(p => category === 'all' || p.category === category)
     .sort((a, b) => {
-      // 1. Featured en premier
       if (a.is_featured !== b.is_featured) return a.is_featured ? -1 : 1
-      // 2. Vérifiés ensuite
       if (a.is_verified !== b.is_verified) return a.is_verified ? -1 : 1
       return 0
     })
@@ -340,7 +378,7 @@ export default function AnnuairePage() {
   })
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       {showForm && (
         <RegisterModal onClose={() => setShowForm(false)} onSuccess={reload} />
       )}
@@ -353,81 +391,96 @@ export default function AnnuairePage() {
             Vétérinaires, éducateurs, pet-sitters de confiance à La Réunion (974)
           </p>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-          <Plus className="h-4 w-4" />
-          S'inscrire à l'annuaire
-        </button>
-      </div>
-
-      {/* Bannière info */}
-      <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-        <Star className="h-5 w-5 text-orange-500 fill-orange-500 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-semibold text-orange-800 text-sm">Mettez votre activité en avant</p>
-          <p className="text-xs text-orange-700 mt-0.5">
-            Les fiches <strong>⭐ En avant</strong> apparaissent en tête de leur catégorie pour seulement 19 € / mois.
-            Associations : inscription <strong>gratuite</strong>.
-          </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Lien "en avant" compact */}
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-700 font-medium border border-orange-200 rounded-full px-3 py-1.5 bg-orange-50 hover:bg-orange-100 transition-colors">
+            <Star className="h-3 w-3 fill-orange-400 text-orange-400" />
+            En avant · 19 €/mois
+          </button>
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
+            <Plus className="h-4 w-4" />
+            S'inscrire
+          </button>
         </div>
       </div>
 
-      {/* Filtre catégories */}
+      {/* Filtre catégories — pills colorés */}
       <div className="flex gap-2 flex-wrap">
-        {CATEGORIES.map(cat => (
-          <button key={cat.id} onClick={() => setCategory(cat.id)}
-            className={[
-              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-              category === cat.id
-                ? 'bg-emerald-600 text-white'
-                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
-            ].join(' ')}>
-            {cat.emoji} {cat.label}
-            {catCounts[cat.id] > 0 && (
-              <span className={`text-xs rounded-full px-1.5 py-0.5 ${category === cat.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                {catCounts[cat.id]}
-              </span>
-            )}
-          </button>
-        ))}
+        {CATEGORIES.map(cat => {
+          const pal  = cat.id !== 'all' ? getPalette(cat.id) : DEFAULT_PALETTE
+          const active = category === cat.id
+          return (
+            <button key={cat.id} onClick={() => setCategory(cat.id)}
+              className={[
+                'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors border',
+                active
+                  ? `${pal.pillActive} ${pal.pillActiveTxt} border-transparent`
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+              ].join(' ')}>
+              {cat.emoji} {cat.label}
+              {(catCounts[cat.id] ?? 0) > 0 && (
+                <span className={`text-xs rounded-full px-1.5 py-0.5 ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  {catCounts[cat.id]}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Liste */}
+      {/* Grille pros */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">
-          <p className="font-medium">Aucun professionnel dans cette catégorie pour l'instant.</p>
+        <div className="text-center py-16 text-slate-400">
+          <p className="text-4xl mb-3">🐾</p>
+          <p className="font-medium text-slate-500">Aucun professionnel dans cette catégorie pour l'instant.</p>
           <button onClick={() => setShowForm(true)} className="mt-3 text-emerald-600 text-sm font-medium hover:underline">
             Soyez le premier à vous inscrire →
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* Featured en tête avec séparateur */}
-          {filtered.filter(p => p.is_featured).length > 0 && (
-            <>
-              <div className="flex items-center gap-2 text-xs text-orange-600 font-semibold uppercase tracking-wide">
+        <div className="space-y-4">
+          {/* En avant — petite rangée séparée si on voit "Tous" */}
+          {filtered.some(p => p.is_featured) && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide flex items-center gap-1.5">
                 <Star className="h-3.5 w-3.5 fill-orange-500" /> En avant
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filtered.filter(p => p.is_featured).map(pro => (
+                  <ProCard key={pro.id} pro={pro} onRegister={() => setShowForm(true)} />
+                ))}
               </div>
-              {filtered.filter(p => p.is_featured).map(pro => <ProCard key={pro.id} pro={pro} />)}
-              {filtered.filter(p => !p.is_featured).length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold uppercase tracking-wide pt-2">
-                  <div className="flex-1 h-px bg-slate-200" /> Autres professionnels <div className="flex-1 h-px bg-slate-200" />
-                </div>
-              )}
-            </>
+            </div>
           )}
-          {filtered.filter(p => !p.is_featured).map(pro => <ProCard key={pro.id} pro={pro} />)}
+
+          {/* Standard */}
+          {filtered.some(p => !p.is_featured) && (
+            <div className="space-y-2">
+              {filtered.some(p => p.is_featured) && (
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  Autres professionnels
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filtered.filter(p => !p.is_featured).map(pro => (
+                  <ProCard key={pro.id} pro={pro} onRegister={() => setShowForm(true)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* CTA bas de page */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-3">
-        <p className="font-semibold text-slate-800">Vous êtes professionnel du monde animal ?</p>
-        <p className="text-sm text-slate-500">
-          Rejoignez l'annuaire SauvCœur.re et gagnez en visibilité auprès des propriétaires d'animaux à La Réunion.
-        </p>
+      {/* CTA bas de page — compact */}
+      <div className="flex items-center justify-between gap-4 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 flex-wrap">
+        <div>
+          <p className="font-semibold text-slate-800 text-sm">Vous êtes professionnel du monde animal ?</p>
+          <p className="text-xs text-slate-500 mt-0.5">Rejoignez l'annuaire et gagnez en visibilité à La Réunion.</p>
+        </div>
         <button onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors">
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
           <Plus className="h-4 w-4" /> Inscrire mon établissement
         </button>
       </div>
