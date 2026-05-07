@@ -49,13 +49,7 @@ const TABS = [
   { id: 'admins',     label: 'Administrateurs',    icon: <Shield className="h-4 w-4" /> },
 ]
 
-// ── Init pros mock ────────────────────────────────────────────
-const INIT_PROS_ADMIN: StoredPro[] = [
-  { id: 'p1', business_name: 'Clinique Vétérinaire du Volcan', contact_name: 'Dr. Martin', category: 'vet',      description: 'Soins généraux, urgences 24h/24.', city: 'Saint-Pierre', phone: '0262 00 00 01', email: 'vet@example.re', is_verified: true,  is_featured: true,  is_association: false, created_at: '2026-04-01T00:00:00Z' },
-  { id: 'p2', business_name: 'Patte Douce Pet-sitting',        contact_name: 'Lola T.',    category: 'sitter',   description: 'Garde à domicile.',               city: 'Saint-Paul',   phone: '0692 00 00 03', email: 'patte@example.re', is_verified: true,  is_featured: true,  is_association: false, created_at: '2026-04-03T00:00:00Z' },
-  { id: 'p3', business_name: 'Éducation Canine Réunion',       contact_name: 'Paul M.',    category: 'education', description: 'Cours collectifs.',              city: 'Le Tampon',    phone: '0692 00 00 04', email: 'edu@example.re',  is_verified: false, is_featured: false, is_association: false, created_at: '2026-04-04T00:00:00Z' },
-  { id: 'p5', business_name: 'SPA Réunion',                    contact_name: 'Julie R.',   category: 'rescue',   description: 'Refuge et adoptions.',            city: 'Saint-Denis',  phone: '0262 00 00 05', email: 'spa@example.re',  is_verified: true,  is_featured: false, is_association: true,  created_at: '2026-04-05T00:00:00Z' },
-]
+const INIT_PROS_ADMIN: StoredPro[] = []
 
 // ── Modal générique ───────────────────────────────────────────
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
@@ -234,7 +228,7 @@ export default function ManagePage() {
   const [annonces,      setAnnonces]      = useState<StoredAnimal[]>([])
   const [membres,       setMembres]       = useState<RealMembre[]>([])
   const [banners,       setBannersState]  = useState<StoredBanner[]>([])
-  const [prosAdmin,     setProsAdmin]     = useState<StoredPro[]>(INIT_PROS_ADMIN)
+  const [prosAdmin,     setProsAdmin]     = useState<StoredPro[]>([])
   const [prosCatFilter, setProsCatFilter] = useState('all')
   const [impressions,   setImpressions]   = useState<Record<string, number>>({})
   const [newsletter,    setNewsletter]    = useState<{email:string;subscribed_at:string}[]>([])
@@ -257,10 +251,8 @@ export default function ManagePage() {
     // Pros depuis Supabase
     fetch('/api/pros')
       .then(r => r.json())
-      .then((data: StoredPro[]) => {
-        const storedIds = new Set(data.map(p => p.id))
-        setProsAdmin([...data, ...INIT_PROS_ADMIN.filter(p => !storedIds.has(p.id))])
-      }).catch(() => {})
+      .then((data: StoredPro[]) => setProsAdmin(data))
+      .catch(() => {})
     // Bannières et admins gardés en localStorage
     const b = getBanners()
     setBannersState(b)

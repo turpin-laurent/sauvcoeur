@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { BadgeCheck, Phone, Globe, MapPin, Star, Plus, X, Send, Check, Building2, Stethoscope, GraduationCap, Home, Scissors, Heart, ShoppingBag, Smile } from 'lucide-react'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
-import { getPros, savePro, type StoredPro } from '@/lib/animals/store'
+import type { StoredPro } from '@/lib/animals/store'
 
 // ── Configuration catégories ──────────────────────────────────
 const CATEGORIES: { id: string; label: string; icon: React.ReactNode; emoji: string }[] = [
@@ -20,14 +20,6 @@ const CATEGORIES: { id: string; label: string; icon: React.ReactNode; emoji: str
 const CAT_LABEL: Record<string, string> = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]))
 const CAT_EMOJI: Record<string, string> = Object.fromEntries(CATEGORIES.map(c => [c.id, c.emoji]))
 
-// ── Données mock initiales ────────────────────────────────────
-const MOCK_PROS: StoredPro[] = [
-  { id: 'p1', business_name: 'Clinique Vétérinaire du Volcan', contact_name: 'Dr. Martin', category: 'vet',      description: 'Soins généraux, urgences 24h/24, chirurgie.',               city: 'Saint-Pierre', phone: '0262 00 00 01', email: '', website: 'https://example.com', is_verified: true,  is_featured: true,  is_association: false, created_at: '2026-04-01T00:00:00Z' },
-  { id: 'p2', business_name: 'Cabinet Vétérinaire Nord',       contact_name: 'Dr. Dupont', category: 'vet',      description: 'Consultations sur RDV, vaccination, stérilisation.',       city: 'Saint-Denis',  phone: '0262 00 00 02', email: '', website: '',                   is_verified: true,  is_featured: false, is_association: false, created_at: '2026-04-02T00:00:00Z' },
-  { id: 'p3', business_name: 'Patte Douce Pet-sitting',        contact_name: 'Lola T.',    category: 'sitter',   description: 'Garde à domicile, promenades, soins quotidiens.',          city: 'Saint-Paul',   phone: '0692 00 00 03', email: '', website: '',                   is_verified: true,  is_featured: true,  is_association: false, created_at: '2026-04-03T00:00:00Z' },
-  { id: 'p4', business_name: 'Éducation Canine Réunion',       contact_name: 'Paul M.',    category: 'education', description: 'Rééducation comportementale, cours collectifs.',           city: 'Le Tampon',    phone: '0692 00 00 04', email: '', website: '',                   is_verified: false, is_featured: false, is_association: false, created_at: '2026-04-04T00:00:00Z' },
-  { id: 'p5', business_name: 'SPA Réunion',                    contact_name: 'Julie R.',   category: 'rescue',    description: 'Refuge pour chiens et chats, adoptions et secours.',      city: 'Saint-Denis',  phone: '0262 00 00 05', email: '', website: 'https://example.com', is_verified: true,  is_featured: false, is_association: true,  created_at: '2026-04-05T00:00:00Z' },
-]
 
 // ── Formulaire d'inscription ──────────────────────────────────
 function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -77,7 +69,11 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       is_association: form.is_association,
       created_at:     new Date().toISOString(),
     }
-    savePro(pro)
+    await fetch('/api/pros', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pro),
+    }).catch(() => {})
     setSaving(false)
     setStep('done')
     setTimeout(() => { onSuccess(); onClose() }, 2000)
@@ -318,23 +314,14 @@ function ProCard({ pro }: { pro: StoredPro }) {
 // ── Page ─────────────────────────────────────────────────────
 export default function AnnuairePage() {
   const [category,  setCategory]  = useState('all')
-  const [pros,      setPros]      = useState<StoredPro[]>(MOCK_PROS)
+  const [pros,      setPros]      = useState<StoredPro[]>([])
   const [showForm,  setShowForm]  = useState(false)
 
-  useEffect(() => {
-    const stored = getPros()
-    if (stored.length > 0) {
-      // Merge stored + mock (avoid duplicates)
-      const storedIds = new Set(stored.map(p => p.id))
-      setPros([...stored, ...MOCK_PROS.filter(p => !storedIds.has(p.id))])
-    }
-  }, [])
-
   const reload = () => {
-    const stored = getPros()
-    const storedIds = new Set(stored.map(p => p.id))
-    setPros([...stored, ...MOCK_PROS.filter(p => !storedIds.has(p.id))])
+    fetch('/api/pros').then(r => r.json()).then(setPros).catch(() => {})
   }
+
+  useEffect(() => { reload() }, [])
 
   const filtered = pros
     .filter(p => category === 'all' || p.category === category)
