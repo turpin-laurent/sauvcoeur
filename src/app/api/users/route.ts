@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const sb = supabaseAdmin()
 
-    // Vérifier si email déjà pris (pour inscription cross-browser)
+    // Vérifier si l'utilisateur existe déjà (login cross-browser)
     const { data: existing } = await sb
       .from('sc_users')
       .select('id, password_enc')
@@ -38,15 +38,26 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (existing && body.check_only) {
-      // Vérification login cross-device : retourner le hash
       return NextResponse.json({ exists: true, password_enc: existing.password_enc })
     }
+
+    const isNew = !existing
 
     const { error } = await sb.from('sc_users').upsert(
       { id, email, name, password_enc, newsletter: newsletter ?? false, city, phone, avatar },
       { onConflict: 'id' }
     )
     if (error) throw error
+
+    // Notification dashboard uniquement pour les nouvelles inscriptions
+    if (isNew && !body.check_only) {
+      await sb.from('sc_notifications').insert({
+        type:    'new_member',
+        title:   `Nouveau membre : ${name}`,
+        message: `${email}${newsletter ? ' · inscrit newsletter' : ''}${city ? ` · ${city}` : ''}`,
+        data:    { id, email, name, newsletter: newsletter ?? false },
+      })
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

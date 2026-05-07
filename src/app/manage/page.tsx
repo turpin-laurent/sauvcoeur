@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   CheckCircle2, XCircle, Edit, Trash2, Users, Megaphone, BookOpen, Image,
-  Zap, LogOut, Upload, Eye, BarChart2, Mail, Shield, Plus, PawPrint, X, Save,
+  Zap, LogOut, Upload, Eye, BarChart2, Mail, Shield, Plus, PawPrint, X, Save, Bell,
 } from 'lucide-react'
 import {
   isAdminValid, clearAdminSession,
@@ -66,8 +66,9 @@ function getBannerImpressions(id: string): number {
   return parseInt(localStorage.getItem(`sc_banner_imp_${id}`) ?? '0', 10)
 }
 
-// ── Types membres ─────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────
 type RealMembre = { id: string; name: string; email: string; newsletter: boolean; created: string }
+type Notif = { id: number; type: string; title: string; message: string; read: boolean; created_at: string; data: Record<string, any> }
 
 // ── QuickPost ─────────────────────────────────────────────────
 function QuickPostForm({ onDone }: { onDone: () => void }) {
@@ -214,6 +215,8 @@ export default function ManagePage() {
   const [impressions,   setImpressions]   = useState<Record<string, number>>({})
   const [newsletter,    setNewsletter]    = useState<{email:string;subscribed_at:string}[]>([])
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([])
+  const [notifs,        setNotifs]        = useState<Notif[]>([])
+  const [showNotifs,    setShowNotifs]    = useState(false)
   const [editAnnonce,   setEditAnnonce]   = useState<StoredAnimal | null>(null)
   const [editBanner,    setEditBanner]    = useState<StoredBanner | null>(null)
   const [editPro,       setEditPro]       = useState<StoredPro | null>(null)
@@ -229,10 +232,15 @@ export default function ManagePage() {
     // Newsletter depuis Supabase
     fetch('/api/newsletter')
       .then(r => r.json()).then(setNewsletter).catch(() => {})
-    // Pros depuis Supabase
-    fetch('/api/pros')
+    // Pros depuis Supabase (tous, y compris pending)
+    fetch('/api/pros', { headers: { 'x-admin': '1' } })
       .then(r => r.json())
       .then((data: StoredPro[]) => setProsAdmin(data))
+      .catch(() => {})
+    // Notifications
+    fetch('/api/notifications')
+      .then(r => r.json())
+      .then((data: Notif[]) => setNotifs(data))
       .catch(() => {})
     // Membres depuis Supabase
     fetch('/api/users')
@@ -311,10 +319,67 @@ export default function ManagePage() {
             {pending > 0 ? `${pending} annonce(s) en attente de modération` : 'Tout est à jour ✓'}
           </p>
         </div>
-        <button onClick={handleLogout}
-          className="flex items-center gap-1.5 border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
-          <LogOut className="h-4 w-4" /> Déconnexion
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Cloche notifications */}
+          <div className="relative">
+            <button onClick={() => {
+              setShowNotifs(v => !v)
+              if (!showNotifs && notifs.some(n => !n.read)) {
+                fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ all: true }) }).catch(() => {})
+                setNotifs(prev => prev.map(n => ({ ...n, read: true })))
+              }
+            }}
+              className="relative flex items-center gap-1.5 border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-300 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
+              <Bell className="h-4 w-4" />
+              {notifs.filter(n => !n.read).length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                  {notifs.filter(n => !n.read).length}
+                </span>
+              )}
+            </button>
+            {/* Panneau notifications */}
+            {showNotifs && (
+              <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 max-h-96 overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between rounded-t-2xl">
+                  <p className="font-semibold text-slate-900 text-sm">Notifications</p>
+                  <button onClick={() => setShowNotifs(false)} className="text-slate-400 hover:text-slate-600"><X className="h-4 w-4" /></button>
+                </div>
+                {notifs.length === 0 ? (
+                  <p className="text-center text-slate-400 text-sm py-8">Aucune notification</p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {notifs.map(n => (
+                      <div key={n.id} className={`px-4 py-3 ${n.read ? 'bg-white' : 'bg-blue-50'}`}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg shrink-0">
+                            {n.type === 'new_pro' ? '🏢' : n.type === 'new_member' ? '👤' : '🐾'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 leading-tight">{n.title}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{n.message}</p>
+                            <p className="text-xs text-slate-400 mt-1">{new Date(n.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
+                          </div>
+                          {n.type === 'new_pro' && (
+                            <button onClick={() => { setShowNotifs(false); setTab('pros') }}
+                              className="shrink-0 text-xs text-emerald-600 hover:underline font-medium">Voir</button>
+                          )}
+                          {n.type === 'new_member' && (
+                            <button onClick={() => { setShowNotifs(false); setTab('membres') }}
+                              className="shrink-0 text-xs text-blue-600 hover:underline font-medium">Voir</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <button onClick={handleLogout}
+            className="flex items-center gap-1.5 border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
+            <LogOut className="h-4 w-4" /> Déconnexion
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -344,6 +409,11 @@ export default function ManagePage() {
             {t.id === 'annonces' && pending > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                 {pending}
+              </span>
+            )}
+            {t.id === 'pros' && prosAdmin.filter(p => (p as any).moderation_status === 'pending').length > 0 && (
+              <span className="bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                {prosAdmin.filter(p => (p as any).moderation_status === 'pending').length}
               </span>
             )}
           </button>
@@ -405,6 +475,45 @@ export default function ManagePage() {
             </div>
           </div>
 
+          {/* Notifications récentes */}
+          {notifs.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-slate-500" /> Activité récente
+                  {notifs.filter(n => !n.read).length > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                      {notifs.filter(n => !n.read).length} nouveau{notifs.filter(n => !n.read).length > 1 ? 'x' : ''}
+                    </span>
+                  )}
+                </h3>
+                <button onClick={() => {
+                  fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ all: true }) }).catch(() => {})
+                  setNotifs(prev => prev.map(n => ({ ...n, read: true })))
+                }} className="text-xs text-slate-400 hover:text-slate-600">Tout marquer lu</button>
+              </div>
+              <div className="space-y-2">
+                {notifs.slice(0, 8).map(n => (
+                  <div key={n.id} className={`flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer ${n.read ? 'bg-slate-50' : 'bg-blue-50 border border-blue-100'}`}
+                    onClick={() => {
+                      if (n.type === 'new_pro') setTab('pros')
+                      if (n.type === 'new_member') setTab('membres')
+                      if (n.type === 'new_annonce') setTab('annonces')
+                    }}>
+                    <span className="text-xl shrink-0">{n.type === 'new_pro' ? '🏢' : n.type === 'new_member' ? '👤' : '🐾'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 leading-tight">{n.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{n.message}</p>
+                    </div>
+                    <p className="text-xs text-slate-400 shrink-0">
+                      {new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
             <h3 className="font-semibold text-emerald-800 mb-3">Actions rapides</h3>
             <div className="flex flex-wrap gap-2">
@@ -416,6 +525,11 @@ export default function ManagePage() {
               <button onClick={() => setTab('publier')}
                 className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
                 <Plus className="h-4 w-4" /> Publier une annonce
+              </button>
+              <button onClick={() => setTab('pros')}
+                className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
+                <BookOpen className="h-4 w-4" /> Valider les pros
+                {prosAdmin.filter(p => (p as any).moderation_status === 'pending').length > 0 && <span className="bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{prosAdmin.filter(p => (p as any).moderation_status === 'pending').length}</span>}
               </button>
               <button onClick={() => setTab('newsletter')}
                 className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
@@ -919,58 +1033,104 @@ export default function ManagePage() {
             ))}
           </div>
 
+          {/* Filtre modération */}
+          {prosAdmin.filter(p => (p as any).moderation_status === 'pending').length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+              <span className="text-amber-600 font-semibold text-sm">⏳ {prosAdmin.filter(p => (p as any).moderation_status === 'pending').length} pro(s) en attente de validation</span>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>{['Établissement','Catégorie','Ville','Contact','Statuts','Actions'].map(h =>
+                <tr>{['Établissement','Catégorie','Ville','Contact','Modération','Statuts','Actions'].map(h =>
                   <th key={h} className="text-left px-4 py-3 font-semibold text-slate-700 text-xs whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {prosAdmin
                   .filter(p => prosCatFilter === 'all' || p.category === prosCatFilter)
-                  .sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
-                  .map(p => (
-                  <tr key={p.id} className={p.is_featured ? 'bg-orange-50' : ''}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{p.business_name}</p>
-                      <p className="text-xs text-slate-400">{p.contact_name}</p>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
-                      {CAT_EMOJI[p.category]} {CAT_LABEL[p.category] ?? p.category}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{p.city}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">
-                      {p.phone && <p>{p.phone}</p>}
-                      {p.email && <p className="text-blue-500">{p.email}</p>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <button onClick={async () => { await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_verified: !p.is_verified }) }).catch(() => {}); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_verified: !x.is_verified } : x)) }}
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-colors ${p.is_verified ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                          {p.is_verified ? '✓ Vérifié' : 'Non vérifié'}
-                        </button>
-                        <button onClick={async () => { await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_featured: !p.is_featured }) }).catch(() => {}); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_featured: !x.is_featured } : x)) }}
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-colors ${p.is_featured ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'}`}>
-                          {p.is_featured ? '⭐ En avant' : 'Standard'}
-                        </button>
-                        {p.is_association && <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700">🤝 Asso</span>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button onClick={() => setEditPro(p)}
-                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors">
-                          <Edit className="h-3.5 w-3.5" />
-                        </button>
-                        <button onClick={async () => { if (!confirm('Supprimer ?')) return; await fetch(`/api/pros/${p.id}`, { method: 'DELETE' }).catch(() => {}); setProsAdmin(prev => prev.filter(x => x.id !== p.id)) }}
-                          className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                  .sort((a, b) => {
+                    const modOrder = { pending: 0, rejected: 2, approved: 1 }
+                    const ma = modOrder[(a as any).moderation_status as keyof typeof modOrder] ?? 1
+                    const mb = modOrder[(b as any).moderation_status as keyof typeof modOrder] ?? 1
+                    if (ma !== mb) return ma - mb
+                    return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0)
+                  })
+                  .map(p => {
+                    const mod = (p as any).moderation_status ?? 'approved'
+                    return (
+                    <tr key={p.id} className={[
+                      p.is_featured ? 'bg-orange-50' : '',
+                      mod === 'pending' ? 'border-l-4 border-l-amber-400' : '',
+                    ].join(' ')}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900">{p.business_name}</p>
+                        <p className="text-xs text-slate-400">{p.contact_name}</p>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                        {CAT_EMOJI[p.category]} {CAT_LABEL[p.category] ?? p.category}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{p.city}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">
+                        {p.phone && <p>{p.phone}</p>}
+                        {p.email && <p className="text-blue-500">{p.email}</p>}
+                      </td>
+                      {/* Colonne modération */}
+                      <td className="px-4 py-3">
+                        {mod === 'pending' ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 mb-1">⏳ En attente</span>
+                            <div className="flex gap-1">
+                              <button onClick={async () => {
+                                await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ moderation_status: 'approved', is_verified: true }) }).catch(() => {})
+                                setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, moderation_status: 'approved' as any, is_verified: true } : x))
+                              }} className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-2 py-1 text-xs font-semibold transition-colors">
+                                <CheckCircle2 className="h-3 w-3" /> Approuver
+                              </button>
+                              <button onClick={async () => {
+                                await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ moderation_status: 'rejected' }) }).catch(() => {})
+                                setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, moderation_status: 'rejected' as any } : x))
+                              }} className="flex items-center gap-1 border border-red-200 hover:bg-red-50 text-red-500 rounded-lg px-2 py-1 text-xs font-semibold transition-colors">
+                                <XCircle className="h-3 w-3" /> Refuser
+                              </button>
+                            </div>
+                          </div>
+                        ) : mod === 'rejected' ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700">✗ Refusé</span>
+                            <button onClick={async () => {
+                              await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ moderation_status: 'approved', is_verified: true }) }).catch(() => {})
+                              setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, moderation_status: 'approved' as any, is_verified: true } : x))
+                            }} className="text-xs text-emerald-600 hover:underline">Réapprouver</button>
+                          </div>
+                        ) : (
+                          <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700">✓ Approuvé</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <button onClick={async () => { await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_featured: !p.is_featured }) }).catch(() => {}); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_featured: !x.is_featured } : x)) }}
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-colors ${p.is_featured ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {p.is_featured ? '⭐ En avant' : 'Standard'}
+                          </button>
+                          {p.is_association && <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700">🤝 Asso</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <button onClick={() => setEditPro(p)}
+                            className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors">
+                            <Edit className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={async () => { if (!confirm('Supprimer ?')) return; await fetch(`/api/pros/${p.id}`, { method: 'DELETE' }).catch(() => {}); setProsAdmin(prev => prev.filter(x => x.id !== p.id)) }}
+                            className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )})}
               </tbody>
             </table>
           </div>
