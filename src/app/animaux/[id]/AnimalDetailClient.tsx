@@ -332,23 +332,44 @@ function ShareButtons({ animal, id }: { animal: Animal; id: string }) {
 export default function AnimalDetailClient({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
 
-  const [animal,     setAnimal]     = useState<Animal | null>(null)
-  const [liked,      setLiked]      = useState(false)
-  const [mainIdx,    setMainIdx]    = useState(0)
-  const [lightbox,   setLightbox]   = useState<number | null>(null)
+  const [animal,      setAnimal]      = useState<Animal | null | undefined>(undefined)
+  const [liked,       setLiked]       = useState(false)
+  const [mainIdx,     setMainIdx]     = useState(0)
+  const [lightbox,    setLightbox]    = useState<number | null>(null)
   const [showContact, setShowContact] = useState(false)
 
   useEffect(() => {
+    setAnimal(undefined) // reset à chaque changement d'id
     fetch(`/api/animals/${id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setAnimal(data ?? MOCK[id] ?? null))
       .catch(() => setAnimal(MOCK[id] ?? null))
   }, [id])
 
+  // Chargement en cours
+  if (animal === undefined) return (
+    <main className="max-w-2xl mx-auto px-4 py-8 space-y-4 animate-pulse">
+      <div className="h-4 w-32 bg-slate-200 rounded-full" />
+      <div className="rounded-2xl bg-slate-100" style={{ aspectRatio: '4/3' }} />
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+        <div className="h-6 w-48 bg-slate-200 rounded-full" />
+        <div className="h-4 w-32 bg-slate-100 rounded-full" />
+        <div className="grid grid-cols-3 gap-2">
+          {[0,1,2].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl" />)}
+        </div>
+      </div>
+    </main>
+  )
+
+  // Annonce introuvable (fetch terminé, rien trouvé)
   if (!animal) return (
     <main className="max-w-2xl mx-auto px-4 py-16 text-center">
-      <p className="text-slate-400">Annonce introuvable.</p>
-      <Link href="/animaux" className="text-emerald-600 underline mt-4 block">Retour aux annonces</Link>
+      <p className="text-5xl mb-4">🐾</p>
+      <p className="font-semibold text-slate-700 text-lg">Annonce introuvable</p>
+      <p className="text-slate-400 text-sm mt-1">Elle a peut-être été supprimée ou n'est plus disponible.</p>
+      <Link href="/animaux" className="inline-block mt-5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">
+        ← Retour aux annonces
+      </Link>
     </main>
   )
 
