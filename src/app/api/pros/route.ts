@@ -8,7 +8,9 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest) {
   try {
     const admin = req.headers.get('x-admin') === '1'
-    let query = supabaseAdmin()
+    const sb = supabaseAdmin()
+
+    let query = sb
       .from('sc_pros')
       .select('*')
       .order('is_featured', { ascending: false })
@@ -17,7 +19,22 @@ export async function GET(req: NextRequest) {
     if (!admin) query = query.eq('moderation_status', 'approved')
 
     const { data, error } = await query
-    if (error) throw error
+
+    // Si la colonne moderation_status n'existe pas encore (migration pas encore exécutée),
+    // on retourne quand même tous les pros pour ne pas casser l'annuaire
+    if (error) {
+      if (error.message?.includes('moderation_status') || error.code === '42703') {
+        console.warn('[API/pros] Colonne moderation_status absente — retour sans filtre')
+        const { data: fallback } = await sb
+          .from('sc_pros')
+          .select('*')
+          .order('is_featured', { ascending: false })
+          .order('created_at', { ascending: false })
+        return NextResponse.json(fallback ?? [])
+      }
+      throw error
+    }
+
     return NextResponse.json(data ?? [])
   } catch (err) {
     console.error('[API/pros GET]', err)
