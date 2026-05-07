@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Shield, Eye, EyeOff } from 'lucide-react'
-import { setAdminSession, validateAdminLogin } from '@/lib/animals/store'
+import { setAdminSession } from '@/lib/animals/store'
 
 export default function ManageLoginPage() {
   const router = useRouter()
@@ -17,14 +17,24 @@ export default function ManageLoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    await new Promise(r => setTimeout(r, 400))
-    const account = validateAdminLogin(email, password)
-    if (account) {
-      setAdminSession()
-      router.push('/manage')
-    } else {
-      setError('Identifiants incorrects.')
+
+    try {
+      const res  = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setAdminSession()
+        router.push('/manage')
+      } else {
+        setError(data.error ?? 'Identifiants incorrects.')
+      }
+    } catch {
+      setError('Erreur réseau. Réessayez.')
     }
+
     setLoading(false)
   }
 

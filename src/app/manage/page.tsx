@@ -7,9 +7,7 @@ import {
   Zap, LogOut, Upload, Eye, BarChart2, Mail, Shield, Plus, PawPrint, X, Save,
 } from 'lucide-react'
 import {
-  getBanners, saveBanners,
   isAdminValid, clearAdminSession,
-  getAdminAccounts, saveAdminAccount, deleteAdminAccount,
   type StoredAnimal, type StoredBanner, type StoredPro, type AdminAccount,
 } from '@/lib/animals/store'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
@@ -244,13 +242,21 @@ export default function ManagePage() {
         newsletter: u.newsletter ?? false, created: u.created_at?.slice(0, 10) ?? '—',
       }))))
       .catch(() => {})
-    // Bannières et admins gardés en localStorage
-    const b = getBanners()
-    setBannersState(b)
-    setAdminAccounts(getAdminAccounts())
-    const imp: Record<string, number> = {}
-    b.forEach(x => { imp[x.id] = getBannerImpressions(x.id) })
-    setImpressions(imp)
+    // Bannières depuis Supabase
+    fetch('/api/banners')
+      .then(r => r.json())
+      .then((data: StoredBanner[]) => {
+        setBannersState(data)
+        const imp: Record<string, number> = {}
+        data.forEach(x => { imp[x.id] = getBannerImpressions(x.id) })
+        setImpressions(imp)
+      })
+      .catch(() => {})
+    // Comptes admin depuis Supabase
+    fetch('/api/admins')
+      .then(r => r.json())
+      .then((data: AdminAccount[]) => setAdminAccounts(data))
+      .catch(() => {})
   }
 
   useEffect(() => { loadData() }, [])
@@ -282,8 +288,13 @@ export default function ManagePage() {
     await fetch(`/api/animals/${id}`, { method: 'DELETE' }).catch(() => {})
     setAnnonces(prev => prev.filter(a => a.id !== id))
   }
-  const saveBannersLocal = (b: StoredBanner[]) => {
-    saveBanners(b); setBannersState([...b])
+  const saveBannersLocal = async (b: StoredBanner[]) => {
+    setBannersState([...b])
+    fetch('/api/banners', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(b),
+    }).catch(() => {})
   }
   const handleLogout = () => { clearAdminSession(); router.push('/manage/login') }
 
@@ -994,7 +1005,7 @@ export default function ManagePage() {
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setShowNewAdmin(false)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
-                  <button onClick={() => {
+                  <button onClick={async () => {
                     if (!newAdmin.name || !newAdmin.email || !newAdmin.password) return
                     const account: AdminAccount = {
                       id: `admin_${Date.now()}`,
@@ -1003,8 +1014,8 @@ export default function ManagePage() {
                       password: newAdmin.password,
                       created_at: new Date().toISOString(),
                     }
-                    saveAdminAccount(account)
-                    setAdminAccounts(getAdminAccounts())
+                    await fetch('/api/admins', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(account) }).catch(() => {})
+                    setAdminAccounts(prev => [account, ...prev])
                     setNewAdmin({ name: '', email: '', password: '' })
                     setShowNewAdmin(false)
                   }} className="flex-1 bg-slate-800 text-white rounded-xl py-2.5 text-sm font-semibold">Créer</button>
@@ -1030,9 +1041,9 @@ export default function ManagePage() {
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setEditAdmin(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
-                  <button onClick={() => {
-                    saveAdminAccount(editAdmin)
-                    setAdminAccounts(getAdminAccounts())
+                  <button onClick={async () => {
+                    await fetch(`/api/admins/${editAdmin.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editAdmin) }).catch(() => {})
+                    setAdminAccounts(prev => prev.map(a => a.id === editAdmin.id ? editAdmin : a))
                     setEditAdmin(null)
                   }} className="flex-1 bg-slate-800 text-white rounded-xl py-2.5 text-sm font-semibold">Enregistrer</button>
                 </div>
@@ -1060,10 +1071,10 @@ export default function ManagePage() {
                           <Edit className="h-3.5 w-3.5" />
                         </button>
                         {adminAccounts.length > 1 && (
-                          <button onClick={() => {
+                          <button onClick={async () => {
                             if (!confirm(`Supprimer l'admin ${a.name} ?`)) return
-                            deleteAdminAccount(a.id)
-                            setAdminAccounts(getAdminAccounts())
+                            const res = await fetch(`/api/admins/${a.id}`, { method: 'DELETE' }).catch(() => null)
+                            if (res?.ok) setAdminAccounts(prev => prev.filter(x => x.id !== a.id))
                           }} className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
