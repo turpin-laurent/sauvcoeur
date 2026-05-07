@@ -39,6 +39,7 @@ export const metadata: Metadata = {
     description: 'Retrouvez, signalez, adoptez des animaux à La Réunion. Plateforme gratuite, locale et engagée.',
     url: BASE_URL,
     siteName: 'SauvCœur.re',
+    images: [{ url: `${BASE_URL}/opengraph-image`, width: 1200, height: 630, alt: 'SauvCœur.re' }],
     locale: 'fr_FR',
     type: 'website',
   },
