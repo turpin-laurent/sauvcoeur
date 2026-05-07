@@ -13,13 +13,7 @@ const ReunionMap = dynamic(() => import('@/components/map/ReunionMap'), { ssr: f
 
 const PAGE_SIZE = 16
 
-// ── Données mock ──────────────────────────────────────────────
-const MOCK_ANIMALS: PublicAnimal[] = [
-  { id: '1', status: 'to_adopt', species: 'dog', gender: 'male',    name: 'Rex',  age_years: 3, specific_signs: 'Berger croisé, très affectueux.',   color: 'Fauve et noir', photos: [], location_city: 'Saint-Denis',  moderation_status: 'approved', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-  { id: '2', status: 'lost',     species: 'cat', gender: 'female',  name: 'Mimi', age_years: 2, specific_signs: 'Chatte tigrée, collier rouge.',       color: 'Tigrée grise',  photos: [], location_city: 'Le Tampon',    moderation_status: 'approved', created_at: new Date(Date.now() - 86400000).toISOString()     },
-  { id: '3', status: 'found',    species: 'dog', gender: 'unknown',              specific_signs: 'Petit chien blanc, marché forain.',        color: 'Blanc',         photos: [], location_city: 'Saint-Paul',   moderation_status: 'approved', created_at: new Date().toISOString()                         },
-  { id: '4', status: 'to_adopt', species: 'cat', gender: 'female',  name: 'Luna', age_years: 1, specific_signs: 'Chatte noire, stérilisée.',           color: 'Noire',         photos: [], location_city: 'Saint-Pierre', moderation_status: 'approved', created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
-]
+const MOCK_ANIMALS: PublicAnimal[] = []
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; emoji: string }> = {
   lost:     { label: 'Perdu',     color: 'text-red-700',     bg: 'bg-red-100',     emoji: '😢' },

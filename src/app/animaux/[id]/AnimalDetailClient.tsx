@@ -16,12 +16,7 @@ interface Animal {
   last_seen_location?: string; last_seen_at?: string
 }
 
-const MOCK: Record<string, Animal> = {
-  '1': { id: '1', status: 'to_adopt', species: 'dog', gender: 'male', name: 'Rex', age_years: 3, specific_signs: 'Berger croisé, très affectueux, bon avec les enfants. Vacciné, vermifugé, identifié.', color: 'Fauve et noir', photos: [], location_city: 'Saint-Denis', created_at: new Date(Date.now() - 2 * 86400000).toISOString(), author_name: 'Marie D.', moderation_status: 'approved', contact_email: 'marie@example.re' },
-  '2': { id: '2', status: 'lost', species: 'cat', gender: 'female', name: 'Mimi', age_years: 2, specific_signs: 'Chatte tigrée, collier rouge, puce I-CAD. Disparue quartier Moufia.', color: 'Tigrée grise', photos: [], location_city: 'Le Tampon', created_at: new Date(Date.now() - 86400000).toISOString(), author_name: 'Paul M.', moderation_status: 'approved', contact_email: 'paul@example.re', last_seen_location: 'Rue de la Paix, quartier Moufia', last_seen_at: new Date(Date.now() - 90000000).toISOString() },
-  '3': { id: '3', status: 'found', species: 'dog', gender: 'unknown', specific_signs: 'Petit chien blanc trouvé près du marché forain de Saint-Paul.', color: 'Blanc', photos: [], location_city: 'Saint-Paul', created_at: new Date().toISOString(), author_name: 'Julie R.', moderation_status: 'approved', contact_email: 'julie@example.re' },
-  '4': { id: '4', status: 'to_adopt', species: 'cat', gender: 'female', name: 'Luna', age_years: 1, specific_signs: 'Chatte noire, stérilisée, primo-vaccinée. Cherche foyer calme.', color: 'Noire', photos: [], location_city: 'Saint-Pierre', created_at: new Date(Date.now() - 3 * 86400000).toISOString(), author_name: 'Asso PataPoil', moderation_status: 'approved', contact_email: 'asso@example.re' },
-}
+const MOCK: Record<string, Animal> = {}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; emoji: string }> = {
   lost:     { label: 'Perdu',     color: 'text-red-700',     bg: 'bg-red-100',     emoji: '😢' },
