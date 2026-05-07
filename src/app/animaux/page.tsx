@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Heart, Search, MapPin, Clock, PawPrint, Star, LayoutList, Map, ChevronLeft, ChevronRight } from 'lucide-react'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
 import { getBanners } from '@/lib/animals/store'
@@ -120,15 +120,44 @@ function AnimalCard({ animal }: { animal: PublicAnimal }) {
 
 // ── Page intérieure ───────────────────────────────────────────
 function AnimauxPageInner() {
-  const sp = useSearchParams()
-  const defaultStatus = (sp.get('status') ?? '') as AnimalStatus | ''
-  const [status,  setStatus]  = useState<AnimalStatus | ''>(defaultStatus)
-  const [city,    setCity]    = useState(sp.get('city') ?? '')
-  const [species, setSpecies] = useState<AnimalSpecies | ''>((sp.get('species') ?? '') as AnimalSpecies | '')
-  const [query,   setQuery]   = useState(sp.get('q') ?? '')
-  const [view,    setView]    = useState<'list' | 'map'>('list')
-  const [page,    setPage]    = useState(1)
+  const sp     = useSearchParams()
+  const router = useRouter()
+
+  const [status,  setStatusState]  = useState<AnimalStatus | ''>((sp.get('status') ?? '') as AnimalStatus | '')
+  const [city,    setCityState]    = useState(sp.get('city') ?? '')
+  const [species, setSpeciesState] = useState<AnimalSpecies | ''>((sp.get('species') ?? '') as AnimalSpecies | '')
+  const [query,   setQuery]        = useState(sp.get('q') ?? '')
+  const [view,    setView]         = useState<'list' | 'map'>('list')
+  const [page,    setPage]         = useState(1)
   const [allAnimals, setAllAnimals] = useState<PublicAnimal[]>(MOCK_ANIMALS)
+
+  // Synchroniser le state quand l'URL change (navigation depuis la homepage, etc.)
+  useEffect(() => {
+    setStatusState((sp.get('status') ?? '') as AnimalStatus | '')
+    setCityState(sp.get('city') ?? '')
+    setSpeciesState((sp.get('species') ?? '') as AnimalSpecies | '')
+    setQuery(sp.get('q') ?? '')
+  }, [sp])
+
+  // Mettre à jour l'URL et le state ensemble (pour que le filtre soit dans l'URL)
+  const setStatus = (v: AnimalStatus | '') => {
+    setStatusState(v)
+    const params = new URLSearchParams(sp.toString())
+    if (v) params.set('status', v); else params.delete('status')
+    router.replace(`/animaux?${params.toString()}`, { scroll: false })
+  }
+  const setCity = (v: string) => {
+    setCityState(v)
+    const params = new URLSearchParams(sp.toString())
+    if (v) params.set('city', v); else params.delete('city')
+    router.replace(`/animaux?${params.toString()}`, { scroll: false })
+  }
+  const setSpecies = (v: AnimalSpecies | '') => {
+    setSpeciesState(v)
+    const params = new URLSearchParams(sp.toString())
+    if (v) params.set('species', v); else params.delete('species')
+    router.replace(`/animaux?${params.toString()}`, { scroll: false })
+  }
 
   useEffect(() => {
     fetch('/api/animals')
