@@ -71,20 +71,6 @@ function getBannerImpressions(id: string): number {
 // ── Types membres ─────────────────────────────────────────────
 type RealMembre = { id: string; name: string; email: string; newsletter: boolean; created: string }
 
-function getRealMembres(): RealMembre[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const users = JSON.parse(localStorage.getItem('sauvcoeur_users') ?? '{}')
-    return Object.entries(users).map(([email, data]: [string, any]) => ({
-      id: email,
-      name: data.name ?? '—',
-      email,
-      newsletter: data.newsletter ?? false,
-      created: '—',
-    }))
-  } catch { return [] }
-}
-
 // ── QuickPost ─────────────────────────────────────────────────
 function QuickPostForm({ onDone }: { onDone: () => void }) {
   const inputCls = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500'
@@ -250,10 +236,17 @@ export default function ManagePage() {
       .then(r => r.json())
       .then((data: StoredPro[]) => setProsAdmin(data))
       .catch(() => {})
+    // Membres depuis Supabase
+    fetch('/api/users')
+      .then(r => r.json())
+      .then((data: any[]) => setMembres(data.map(u => ({
+        id: u.id, name: u.name, email: u.email,
+        newsletter: u.newsletter ?? false, created: u.created_at?.slice(0, 10) ?? '—',
+      }))))
+      .catch(() => {})
     // Bannières et admins gardés en localStorage
     const b = getBanners()
     setBannersState(b)
-    setMembres(getRealMembres())
     setAdminAccounts(getAdminAccounts())
     const imp: Record<string, number> = {}
     b.forEach(x => { imp[x.id] = getBannerImpressions(x.id) })
