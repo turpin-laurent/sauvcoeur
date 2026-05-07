@@ -52,9 +52,13 @@ export interface StoredPro {
   phone?: string
   email?: string
   website?: string
+  facebook?: string
+  logo?: string           // base64 ou URL
+  photos?: string[]       // galerie photos
   is_verified: boolean
   is_featured: boolean       // payant €19/mois — en avant dans sa catégorie
   is_association: boolean    // association (inscription gratuite)
+  moderation_status?: string
   created_at: string
 }
 
