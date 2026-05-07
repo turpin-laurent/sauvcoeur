@@ -220,6 +220,8 @@ export default function ManagePage() {
   const [editAnnonce,   setEditAnnonce]   = useState<StoredAnimal | null>(null)
   const [editBanner,    setEditBanner]    = useState<StoredBanner | null>(null)
   const [editPro,       setEditPro]       = useState<StoredPro | null>(null)
+  const proLogoRef   = useRef<HTMLInputElement>(null)
+  const proPhotosRef = useRef<HTMLInputElement>(null)
   const [editAdmin,     setEditAdmin]     = useState<AdminAccount | null>(null)
   const [newAdmin,      setNewAdmin]      = useState({ name:'', email:'', password:'' })
   const [showNewAdmin,  setShowNewAdmin]  = useState(false)
@@ -950,25 +952,72 @@ export default function ManagePage() {
         <div className="space-y-4">
           {editPro && (
             <Modal title="Modifier le professionnel" onClose={() => setEditPro(null)}>
-              <div className="space-y-3">
+              <div className="space-y-4">
+
+                {/* ── Logo ── */}
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-2">Logo / Photo principale</label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      {editPro.logo
+                        ? <img src={editPro.logo} alt="logo"
+                            className="h-16 w-16 rounded-xl object-cover border border-slate-200" />
+                        : <div className="h-16 w-16 rounded-xl bg-slate-100 flex items-center justify-center text-2xl border border-dashed border-slate-300">
+                            {CAT_EMOJI[editPro.category] ?? '🐾'}
+                          </div>
+                      }
+                      <button type="button" onClick={() => proLogoRef.current?.click()}
+                        className="absolute -bottom-1.5 -right-1.5 bg-emerald-600 text-white rounded-full p-1.5 hover:bg-emerald-700 shadow">
+                        <Upload className="h-3 w-3" />
+                      </button>
+                      <input ref={proLogoRef} type="file" accept="image/*" className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          const reader = new FileReader()
+                          reader.onload = ev => setEditPro({ ...editPro, logo: ev.target?.result as string })
+                          reader.readAsDataURL(file)
+                        }} />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs text-slate-500">Cliquez sur l'icône pour changer le logo.</p>
+                      {editPro.logo && (
+                        <button type="button" onClick={() => setEditPro({ ...editPro, logo: undefined })}
+                          className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                          <X className="h-3 w-3" /> Supprimer le logo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Infos principales ── */}
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Nom de l'établissement</label>
-                  <input value={editPro.business_name} onChange={e => setEditPro({ ...editPro, business_name: e.target.value })} className={inputCls} />
+                  <input value={editPro.business_name}
+                    onChange={e => setEditPro({ ...editPro, business_name: e.target.value })}
+                    className={inputCls} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Nom du responsable</label>
-                  <input value={editPro.contact_name} onChange={e => setEditPro({ ...editPro, contact_name: e.target.value })} className={inputCls} />
+                  <input value={editPro.contact_name}
+                    onChange={e => setEditPro({ ...editPro, contact_name: e.target.value })}
+                    className={inputCls} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Catégorie</label>
-                    <select value={editPro.category} onChange={e => setEditPro({ ...editPro, category: e.target.value })} className={inputCls}>
+                    <select value={editPro.category}
+                      onChange={e => setEditPro({ ...editPro, category: e.target.value })}
+                      className={inputCls}>
                       {Object.entries(CAT_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Commune</label>
-                    <select value={editPro.city} onChange={e => setEditPro({ ...editPro, city: e.target.value })} className={inputCls}>
+                    <select value={editPro.city}
+                      onChange={e => setEditPro({ ...editPro, city: e.target.value })}
+                      className={inputCls}>
                       {COMMUNES_974.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
                     </select>
                   </div>
@@ -976,43 +1025,112 @@ export default function ManagePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Téléphone</label>
-                    <input type="tel" value={editPro.phone ?? ''} onChange={e => setEditPro({ ...editPro, phone: e.target.value })} className={inputCls} />
+                    <input type="tel" value={editPro.phone ?? ''}
+                      onChange={e => setEditPro({ ...editPro, phone: e.target.value })}
+                      className={inputCls} />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
-                    <input type="email" value={editPro.email ?? ''} onChange={e => setEditPro({ ...editPro, email: e.target.value })} className={inputCls} />
+                    <input type="email" value={editPro.email ?? ''}
+                      onChange={e => setEditPro({ ...editPro, email: e.target.value })}
+                      className={inputCls} />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Site web</label>
-                  <input type="url" value={editPro.website ?? ''} onChange={e => setEditPro({ ...editPro, website: e.target.value })} className={inputCls} placeholder="https://…" />
+                  <input type="url" value={editPro.website ?? ''}
+                    onChange={e => setEditPro({ ...editPro, website: e.target.value })}
+                    className={inputCls} placeholder="https://…" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Page Facebook</label>
+                  <input value={editPro.facebook ?? ''}
+                    onChange={e => setEditPro({ ...editPro, facebook: e.target.value })}
+                    className={inputCls} placeholder="https://facebook.com/ma-page" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Description</label>
-                  <textarea value={editPro.description ?? ''} onChange={e => setEditPro({ ...editPro, description: e.target.value })}
-                    rows={2} className={`${inputCls} resize-none`} />
+                  <textarea value={editPro.description ?? ''}
+                    onChange={e => setEditPro({ ...editPro, description: e.target.value })}
+                    rows={3} className={`${inputCls} resize-none`} />
                 </div>
-                <div className="flex gap-4 flex-wrap pt-1">
+
+                {/* ── Photos galerie ── */}
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-2">Photos de l'établissement</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {(editPro.photos ?? []).map((p, i) => (
+                      <div key={i} className="relative group">
+                        <img src={p} alt="" className="h-20 w-20 rounded-xl object-cover border border-slate-200" />
+                        <button type="button"
+                          onClick={() => setEditPro({ ...editPro, photos: (editPro.photos ?? []).filter((_, j) => j !== i) })}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => proPhotosRef.current?.click()}
+                      className="h-20 w-20 rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-400 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-emerald-600 transition-colors">
+                      <Upload className="h-5 w-5" />
+                      <span className="text-[10px] font-medium">Ajouter</span>
+                    </button>
+                    <input ref={proPhotosRef} type="file" accept="image/*" multiple className="hidden"
+                      onChange={e => {
+                        const files = Array.from(e.target.files ?? [])
+                        files.forEach(file => {
+                          const reader = new FileReader()
+                          reader.onload = ev => {
+                            setEditPro(prev => prev ? {
+                              ...prev,
+                              photos: [...(prev.photos ?? []), ev.target?.result as string],
+                            } : prev)
+                          }
+                          reader.readAsDataURL(file)
+                        })
+                        e.target.value = ''
+                      }} />
+                  </div>
+                  <p className="text-xs text-slate-400">Cliquez sur une photo pour la supprimer.</p>
+                </div>
+
+                {/* ── Statuts ── */}
+                <div className="flex gap-4 flex-wrap pt-1 border-t border-slate-100">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editPro.is_verified} onChange={e => setEditPro({ ...editPro, is_verified: e.target.checked })} className="accent-emerald-600" />
+                    <input type="checkbox" checked={editPro.is_verified}
+                      onChange={e => setEditPro({ ...editPro, is_verified: e.target.checked })}
+                      className="accent-emerald-600" />
                     <span className="text-sm text-slate-700">✓ Vérifié</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editPro.is_featured} onChange={e => setEditPro({ ...editPro, is_featured: e.target.checked })} className="accent-orange-500" />
+                    <input type="checkbox" checked={editPro.is_featured}
+                      onChange={e => setEditPro({ ...editPro, is_featured: e.target.checked })}
+                      className="accent-orange-500" />
                     <span className="text-sm text-slate-700">⭐ En avant (19 €/mois)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editPro.is_association} onChange={e => setEditPro({ ...editPro, is_association: e.target.checked })} className="accent-blue-500" />
+                    <input type="checkbox" checked={editPro.is_association}
+                      onChange={e => setEditPro({ ...editPro, is_association: e.target.checked })}
+                      className="accent-blue-500" />
                     <span className="text-sm text-slate-700">🤝 Association</span>
                   </label>
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => setEditPro(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
+
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setEditPro(null)}
+                    className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm hover:bg-slate-50 transition-colors">
+                    Annuler
+                  </button>
                   <button onClick={async () => {
-                    await fetch(`/api/pros/${editPro.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editPro) }).catch(() => {})
+                    await fetch(`/api/pros/${editPro.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(editPro),
+                    }).catch(() => {})
                     setProsAdmin(prev => prev.map(x => x.id === editPro.id ? editPro : x))
                     setEditPro(null)
-                  }} className="flex-1 bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold">Enregistrer</button>
+                  }} className="flex-1 bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
+                    <Save className="h-4 w-4" /> Enregistrer
+                  </button>
                 </div>
               </div>
             </Modal>
