@@ -241,7 +241,7 @@ export default function NouvelleAnnoncePage() {
     // Utiliser les photos avec watermark si disponibles, sinon base64 brut
     const photos = previews.length > 0 ? previews : await filesToBase64(form.photos)
 
-    saveAnimal({
+    const animal = {
       id:                animalId.current,
       status:            form.status as Status,
       species:           form.species as Species,
@@ -266,7 +266,14 @@ export default function NouvelleAnnoncePage() {
       pinned:            false,
       author_id:         user?.email ?? 'anonymous',
       author_name:       user?.name  ?? 'Anonyme',
-    })
+    }
+
+    // Sauvegarde Supabase via API
+    await fetch('/api/animals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(animal),
+    }).catch(() => { /* non bloquant */ })
 
     try {
       await fetch('/api/notify', {

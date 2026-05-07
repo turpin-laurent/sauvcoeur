@@ -131,22 +131,22 @@ function AnimauxPageInner() {
   const [allAnimals, setAllAnimals] = useState<PublicAnimal[]>(MOCK_ANIMALS)
 
   useEffect(() => {
-    const stored = getAnimals()
-    if (stored.length > 0) {
-      const storedIds = new Set(stored.map(a => a.id))
-      setAllAnimals([
-        ...stored.map(a => ({
-          id: a.id, status: a.status as AnimalStatus,
-          species: a.species as AnimalSpecies, gender: a.gender as any,
-          name: a.name, age_years: a.age_years, color: a.color,
-          specific_signs: a.specific_signs, photos: a.photos,
-          location_city: a.location_city,
-          moderation_status: a.moderation_status as any,
-          created_at: a.created_at, boosted: a.boosted, pinned: a.pinned,
-        } as PublicAnimal & { boosted?: boolean; pinned?: boolean })),
-        ...MOCK_ANIMALS.filter(a => !storedIds.has(a.id)),
-      ])
-    }
+    fetch('/api/animals')
+      .then(r => r.json())
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAllAnimals(data.map(a => ({
+            id: a.id, status: a.status as AnimalStatus,
+            species: a.species as AnimalSpecies, gender: a.gender as any,
+            name: a.name, age_years: a.age_years, color: a.color,
+            specific_signs: a.specific_signs, photos: a.photos ?? [],
+            location_city: a.location_city,
+            moderation_status: a.moderation_status as any,
+            created_at: a.created_at, boosted: a.boosted, pinned: a.pinned,
+          } as PublicAnimal & { boosted?: boolean; pinned?: boolean })))
+        }
+      })
+      .catch(() => { /* fallback silencieux */ })
   }, [])
 
   const filtered = useMemo(() => allAnimals.filter(a => {

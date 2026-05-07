@@ -113,10 +113,10 @@ function QuickPostForm({ onDone }: { onDone: () => void }) {
 
   const f = (key: string, val: unknown) => setForm(p => ({ ...p, [key]: val }))
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.species || !form.location_city) return
     setSaving(true)
-    saveAnimal({
+    const animal = {
       id: `admin_${Date.now()}`,
       status: form.status,
       species: form.species,
@@ -135,7 +135,12 @@ function QuickPostForm({ onDone }: { onDone: () => void }) {
       pinned: false,
       author_id: 'admin',
       author_name: 'Équipe SauvCœur',
-    })
+    }
+    await fetch('/api/animals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(animal),
+    }).catch(() => {})
     setSaving(false)
     onDone()
   }
@@ -242,23 +247,31 @@ export default function ManagePage() {
   const [showNewAdmin,  setShowNewAdmin]  = useState(false)
   const [quickDone,     setQuickDone]     = useState(false)
 
-  useEffect(() => {
-    const a = getAnimals()
+  const loadData = async () => {
+    // Annonces depuis Supabase
+    fetch('/api/animals', { headers: { 'x-admin': '1' } })
+      .then(r => r.json()).then(setAnnonces).catch(() => {})
+    // Newsletter depuis Supabase
+    fetch('/api/newsletter')
+      .then(r => r.json()).then(setNewsletter).catch(() => {})
+    // Pros depuis Supabase
+    fetch('/api/pros')
+      .then(r => r.json())
+      .then((data: StoredPro[]) => {
+        const storedIds = new Set(data.map(p => p.id))
+        setProsAdmin([...data, ...INIT_PROS_ADMIN.filter(p => !storedIds.has(p.id))])
+      }).catch(() => {})
+    // Bannières et admins gardés en localStorage
     const b = getBanners()
-    setAnnonces(a)
     setBannersState(b)
     setMembres(getRealMembres())
-    setNewsletter(getNewsletterSubscribers())
     setAdminAccounts(getAdminAccounts())
     const imp: Record<string, number> = {}
     b.forEach(x => { imp[x.id] = getBannerImpressions(x.id) })
     setImpressions(imp)
-    const storedPros = getPros()
-    if (storedPros.length > 0) {
-      const storedIds = new Set(storedPros.map(p => p.id))
-      setProsAdmin([...storedPros, ...INIT_PROS_ADMIN.filter(p => !storedIds.has(p.id))])
-    }
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   const boosts = annonces.filter(a => a.boosted).map(a => ({
     id: a.id,
@@ -272,12 +285,20 @@ export default function ManagePage() {
   const pending  = annonces.filter(a => a.moderation_status === 'pending').length
   const approved = annonces.filter(a => a.moderation_status === 'approved').length
 
-  const saveAnnonce = (a: StoredAnimal) => {
-    updateAnimal(a.id, a); setAnnonces(getAnimals()); setEditAnnonce(null)
+  const saveAnnonce = async (a: StoredAnimal) => {
+    await fetch(`/api/animals/${a.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(a),
+    }).catch(() => {})
+    setEditAnnonce(null)
+    fetch('/api/animals', { headers: { 'x-admin': '1' } })
+      .then(r => r.json()).then(setAnnonces).catch(() => {})
   }
-  const removeAnnonce = (id: string) => {
+  const removeAnnonce = async (id: string) => {
     if (!confirm('Supprimer cette annonce ?')) return
-    deleteAnimal(id); setAnnonces(getAnimals())
+    await fetch(`/api/animals/${id}`, { method: 'DELETE' }).catch(() => {})
+    setAnnonces(prev => prev.filter(a => a.id !== id))
   }
   const saveBannersLocal = (b: StoredBanner[]) => {
     saveBanners(b); setBannersState([...b])
@@ -708,10 +729,10 @@ export default function ManagePage() {
                       <td className="px-4 py-3 font-medium text-slate-900">{s.email}</td>
                       <td className="px-4 py-3 text-slate-500">{s.subscribed_at.slice(0,10)}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => {
+                        <button onClick={async () => {
                           if (!confirm(`Désabonner ${s.email} ?`)) return
-                          removeNewsletterSubscriber(s.email)
-                          setNewsletter(getNewsletterSubscribers())
+                          await fetch(`/api/newsletter?email=${encodeURIComponent(s.email)}`, { method: 'DELETE' })
+                          fetch('/api/newsletter').then(r => r.json()).then(setNewsletter).catch(() => {})
                         }} className="text-xs text-red-500 hover:text-red-700 transition-colors">
                           Désabonner
                         </button>
@@ -876,8 +897,8 @@ export default function ManagePage() {
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setEditPro(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
-                  <button onClick={() => {
-                    updatePro(editPro.id, editPro)
+                  <button onClick={async () => {
+                    await fetch(`/api/pros/${editPro.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editPro) }).catch(() => {})
                     setProsAdmin(prev => prev.map(x => x.id === editPro.id ? editPro : x))
                     setEditPro(null)
                   }} className="flex-1 bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold">Enregistrer</button>
@@ -928,11 +949,11 @@ export default function ManagePage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
-                        <button onClick={() => { updatePro(p.id, { is_verified: !p.is_verified }); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_verified: !x.is_verified } : x)) }}
+                        <button onClick={async () => { await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_verified: !p.is_verified }) }).catch(() => {}); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_verified: !x.is_verified } : x)) }}
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-colors ${p.is_verified ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                           {p.is_verified ? '✓ Vérifié' : 'Non vérifié'}
                         </button>
-                        <button onClick={() => { updatePro(p.id, { is_featured: !p.is_featured }); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_featured: !x.is_featured } : x)) }}
+                        <button onClick={async () => { await fetch(`/api/pros/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_featured: !p.is_featured }) }).catch(() => {}); setProsAdmin(prev => prev.map(x => x.id === p.id ? { ...x, is_featured: !x.is_featured } : x)) }}
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-colors ${p.is_featured ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'}`}>
                           {p.is_featured ? '⭐ En avant' : 'Standard'}
                         </button>
@@ -945,7 +966,7 @@ export default function ManagePage() {
                           className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors">
                           <Edit className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => { if (!confirm('Supprimer ?')) return; deletePro(p.id); setProsAdmin(prev => prev.filter(x => x.id !== p.id)) }}
+                        <button onClick={async () => { if (!confirm('Supprimer ?')) return; await fetch(`/api/pros/${p.id}`, { method: 'DELETE' }).catch(() => {}); setProsAdmin(prev => prev.filter(x => x.id !== p.id)) }}
                           className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

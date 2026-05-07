@@ -1,21 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { addNewsletterSubscriber } from '@/lib/animals/store'
 
 export function NewsletterForm() {
   const [email,   setEmail]   = useState('')
   const [success, setSuccess] = useState(false)
   const [already, setAlready] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const isNew = addNewsletterSubscriber(email)
-    if (isNew) {
-      setSuccess(true)
-    } else {
-      setAlready(true)
-      setTimeout(() => setAlready(false), 3000)
+    setLoading(true)
+    try {
+      const res  = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (data.already) {
+        setAlready(true)
+        setTimeout(() => setAlready(false), 3000)
+      } else {
+        setSuccess(true)
+      }
+    } catch {
+      // fallback silencieux
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -40,9 +52,10 @@ export function NewsletterForm() {
         />
         <button
           type="submit"
-          className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors whitespace-nowrap"
+          disabled={loading}
+          className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 transition-colors whitespace-nowrap"
         >
-          S'abonner
+          {loading ? '…' : "S'abonner"}
         </button>
       </div>
       {already && (

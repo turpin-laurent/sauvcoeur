@@ -342,8 +342,10 @@ export default function AnimalDetailClient({ params }: { params: Promise<{ id: s
   const [showContact, setShowContact] = useState(false)
 
   useEffect(() => {
-    const stored = getAnimalById(id)
-    setAnimal((stored as any) ?? MOCK[id] ?? null)
+    fetch(`/api/animals/${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setAnimal(data ?? MOCK[id] ?? null))
+      .catch(() => setAnimal(MOCK[id] ?? null))
   }, [id])
 
   if (!animal) return (
