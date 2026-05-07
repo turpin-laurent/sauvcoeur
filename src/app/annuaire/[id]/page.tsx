@@ -67,12 +67,9 @@ export default function ProDetailPage({ params }: { params: Promise<{ id: string
   const [pro, setPro] = useState<StoredPro | null | undefined>(undefined)
 
   useEffect(() => {
-    fetch('/api/pros')
-      .then(r => r.json())
-      .then((list: StoredPro[]) => {
-        const found = list.find(p => p.id === id) ?? null
-        setPro(found)
-      })
+    fetch(`/api/pros/${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setPro(data ?? null))
       .catch(() => setPro(null))
   }, [id])
 

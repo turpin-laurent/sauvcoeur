@@ -408,12 +408,14 @@ export default function AnimalDetailClient({ params }: { params: Promise<{ id: s
           <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-sm font-semibold ${cfg.bg} ${cfg.color}`}>
             {cfg.emoji} {cfg.label}
           </span>
-          {animal.pinned && (
-            <span className="absolute top-3 left-32 rounded-full px-2 py-0.5 text-xs font-bold bg-yellow-400 text-yellow-900">📌 Épinglé</span>
-          )}
-          {animal.boosted && (
-            <span className="absolute top-3 left-32 rounded-full px-2 py-0.5 text-xs font-bold bg-orange-500 text-white">⚡ Boosté</span>
-          )}
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+            {animal.pinned && (
+              <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-yellow-400 text-yellow-900">📌 Épinglé</span>
+            )}
+            {animal.boosted && (
+              <span className="rounded-full px-2 py-0.5 text-xs font-bold bg-orange-500 text-white">⚡ Boosté</span>
+            )}
+          </div>
           {animal.moderation_status === 'approved' && (
             <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-white/90 rounded-full px-2 py-0.5 text-xs font-semibold text-emerald-700">
               <CheckCircle2 className="h-3 w-3" /> Annonce vérifiée

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Search, ChevronRight } from 'lucide-react'
 import { NewsletterForm } from '@/components/home/NewsletterForm'
 import { RecentAnimals } from '@/components/home/RecentAnimals'
+import { HeroBadge } from '@/components/home/HeroBadge'
 import ReunionMapClient from '@/components/map/ReunionMapClient'
 
 function IconFacebook({ className }: { className?: string }) {
@@ -22,9 +23,7 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <section className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-12 sm:py-20 text-center space-y-5 sm:space-y-6">
-          <span className="inline-block bg-white/20 rounded-full px-4 py-1 text-sm font-medium">
-            🐾 24 animaux déjà retrouvés grâce à SauvCœur.re
-          </span>
+          <HeroBadge />
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
             Mobilisez des milliers de personnes<br className="hidden sm:block" />
             {' '}<span className="text-emerald-200">à la recherche de votre animal</span><br className="hidden sm:block" />
