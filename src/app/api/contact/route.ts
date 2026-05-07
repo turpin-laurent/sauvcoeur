@@ -11,7 +11,10 @@ async function sendViaResend(payload: object) {
     },
     body: JSON.stringify(payload),
   })
-  if (!res.ok) throw new Error(await res.text())
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Resend error ${res.status}: ${body}`)
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -20,6 +23,14 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('[CONTACT] RESEND_API_KEY non configurée — email non envoyé')
+      return NextResponse.json(
+        { error: 'Service email non configuré. Écrivez-nous directement à sauvcoeur974@gmail.com' },
+        { status: 503 }
+      )
     }
 
     const html = `
@@ -44,21 +55,20 @@ export async function POST(req: NextRequest) {
       </div>
     `
 
-    if (process.env.RESEND_API_KEY) {
-      await sendViaResend({
-        from: process.env.EMAIL_FROM ?? 'noreply@sauvcoeur.re',
-        to: ['sauvcoeur974@gmail.com'],
-        reply_to: email,
-        subject: `[SauvCœur] Contact : ${subject || 'Message sans sujet'} — ${name}`,
-        html,
-      })
-    } else {
-      console.log('[CONTACT] Pas de RESEND_API_KEY — email simulé:', { name, email, subject, message })
-    }
+    await sendViaResend({
+      from: process.env.EMAIL_FROM ?? 'noreply@sauvcoeur.re',
+      to: ['sauvcoeur974@gmail.com'],
+      reply_to: email,
+      subject: `[SauvCœur] Contact : ${subject || 'Message sans sujet'} — ${name}`,
+      html,
+    })
 
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[CONTACT] Error:', err)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Erreur lors de l\'envoi. Écrivez-nous directement à sauvcoeur974@gmail.com' },
+      { status: 500 }
+    )
   }
 }

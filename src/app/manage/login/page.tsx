@@ -3,10 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Shield, Eye, EyeOff } from 'lucide-react'
-import { setAdminSession } from '@/lib/animals/store'
-
-const ADMIN_EMAIL    = 'sauvcoeur974@gmail.com'
-const ADMIN_PASSWORD = 'Nutella974!'
+import { setAdminSession, validateAdminLogin } from '@/lib/animals/store'
 
 export default function ManageLoginPage() {
   const router = useRouter()
@@ -20,9 +17,10 @@ export default function ManageLoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    await new Promise(r => setTimeout(r, 500))
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      setAdminSession()          // session valide 48h
+    await new Promise(r => setTimeout(r, 400))
+    const account = validateAdminLogin(email, password)
+    if (account) {
+      setAdminSession()
       router.push('/manage')
     } else {
       setError('Identifiants incorrects.')

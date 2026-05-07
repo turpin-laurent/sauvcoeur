@@ -4,6 +4,7 @@ export interface StoredAnimal {
   id: string
   status: 'lost' | 'found' | 'to_adopt'
   species: string
+  nac_type?: string            // sous-type NAC si species === 'other'
   gender: string
   name?: string
   age_years?: number
@@ -13,8 +14,10 @@ export interface StoredAnimal {
   location_city: string
   last_seen_location?: string  // adresse ou lieu précis de dernière observation
   last_seen_at?: string        // ISO datetime
+  contact_type?: 'email' | 'phone' | 'facebook'  // mode de contact choisi
   contact_email: string
   contact_phone?: string
+  contact_facebook?: string
   photos: string[]             // data-URLs base64
   created_at: string
   moderation_status: 'pending' | 'approved' | 'rejected'
@@ -22,6 +25,21 @@ export interface StoredAnimal {
   pinned: boolean
   author_id: string            // email de l'utilisateur
   author_name: string
+}
+
+// ── Newsletter subscribers ─────────────────────────────────────
+export interface NewsletterSubscriber {
+  email: string
+  subscribed_at: string
+}
+
+// ── Admin account ──────────────────────────────────────────────
+export interface AdminAccount {
+  id: string
+  email: string
+  password: string
+  name: string
+  created_at: string
 }
 
 export interface StoredPro {
@@ -49,10 +67,16 @@ export interface StoredBanner {
   image?: string   // base64 data-URL (468×60)
 }
 
-const ANIMALS_KEY = 'sauvcoeur_animals'
-const BANNERS_KEY = 'sauvcoeur_banners'
-const ADMIN_KEY   = 'sauvcoeur_admin'
-const PROS_KEY    = 'sauvcoeur_pros'
+const ANIMALS_KEY      = 'sauvcoeur_animals'
+const BANNERS_KEY      = 'sauvcoeur_banners'
+const ADMIN_KEY        = 'sauvcoeur_admin'
+const PROS_KEY         = 'sauvcoeur_pros'
+const NEWSLETTER_KEY   = 'sauvcoeur_newsletter'
+const ADMIN_ACCOUNTS_KEY = 'sauvcoeur_admin_accounts'
+
+const DEFAULT_ADMIN_ACCOUNTS: AdminAccount[] = [
+  { id: 'admin1', email: 'sauvcoeur974@gmail.com', password: 'Nutella974!', name: 'Admin principal', created_at: '2026-01-01T00:00:00Z' },
+]
 
 const DEFAULT_BANNERS: StoredBanner[] = [
   { id: 'b1', slot: 'Liste annonces — haut', url: 'https://www.facebook.com/SauvCoeurReunion', text: 'Votre publicité ici — Soutenez SauvCœur.re', active: true },
@@ -115,6 +139,35 @@ export function updatePro(id: string, patch: Partial<StoredPro>) {
 }
 export function deletePro(id: string) {
   write(PROS_KEY, getPros().filter(p => p.id !== id))
+}
+
+// ── Newsletter ────────────────────────────────────────────────
+export function getNewsletterSubscribers(): NewsletterSubscriber[] { return read(NEWSLETTER_KEY, []) }
+export function addNewsletterSubscriber(email: string) {
+  const list = getNewsletterSubscribers()
+  if (list.find(s => s.email.toLowerCase() === email.toLowerCase())) return false // déjà inscrit
+  list.unshift({ email: email.toLowerCase(), subscribed_at: new Date().toISOString() })
+  write(NEWSLETTER_KEY, list)
+  return true
+}
+export function removeNewsletterSubscriber(email: string) {
+  write(NEWSLETTER_KEY, getNewsletterSubscribers().filter(s => s.email !== email.toLowerCase()))
+}
+
+// ── Admin accounts ────────────────────────────────────────────
+export function getAdminAccounts(): AdminAccount[] { return read(ADMIN_ACCOUNTS_KEY, DEFAULT_ADMIN_ACCOUNTS) }
+export function saveAdminAccount(account: AdminAccount) {
+  const list = getAdminAccounts()
+  const idx  = list.findIndex(a => a.id === account.id)
+  if (idx >= 0) list[idx] = account; else list.unshift(account)
+  write(ADMIN_ACCOUNTS_KEY, list)
+}
+export function deleteAdminAccount(id: string) {
+  write(ADMIN_ACCOUNTS_KEY, getAdminAccounts().filter(a => a.id !== id))
+}
+export function validateAdminLogin(email: string, password: string): AdminAccount | null {
+  const accounts = getAdminAccounts()
+  return accounts.find(a => a.email.toLowerCase() === email.toLowerCase() && a.password === password) ?? null
 }
 
 // ── Utilitaire : photos File[] → base64[] ─────────────────────

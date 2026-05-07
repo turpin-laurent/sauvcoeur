@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PawPrint, Eye, EyeOff, LogIn, UserPlus, KeyRound, CheckCircle2 } from 'lucide-react'
@@ -10,7 +10,7 @@ type Mode = 'login' | 'register' | 'forgot'
 
 export default function ConnexionPage() {
   const router         = useRouter()
-  const { login, register, forgotPassword } = useAuth()
+  const { user, loading: authLoading, login, register, forgotPassword } = useAuth()
   const [mode, setMode]         = useState<Mode>('login')
   const [name, setName]         = useState('')
   const [email, setEmail]       = useState('')
@@ -20,6 +20,11 @@ export default function ConnexionPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [success, setSuccess]   = useState('')
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) router.replace('/mon-espace')
+  }, [user, authLoading, router])
 
   const reset = (m: Mode) => { setMode(m); setError(''); setSuccess('') }
 

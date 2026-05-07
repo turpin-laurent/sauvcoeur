@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { PawPrint, Search, Heart, BookOpen, Plus } from 'lucide-react'
 import { AuthProvider } from '@/lib/auth/context'
 import MobileNav from '@/components/layout/MobileNav'
+import NavAuth from '@/components/layout/NavAuth'
 
 function IconFacebook({ className }: { className?: string }) {
   return (
@@ -24,9 +25,29 @@ import './globals.css'
 
 const geist = Geist({ variable: '--font-geist', subsets: ['latin'] })
 
+const BASE_URL = 'https://www.sauvcoeur.re'
+
 export const metadata: Metadata = {
-  title: 'SauvCœur.re — La cause animale à La Réunion',
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: 'SauvCœur.re — La cause animale à La Réunion',
+    template: '%s | SauvCœur.re',
+  },
   description: 'La 1ère plateforme réunionnaise pour retrouver, signaler, adopter et accompagner les animaux.',
+  openGraph: {
+    title: '🐾 SauvCœur.re — La cause animale à La Réunion',
+    description: 'Retrouvez, signalez, adoptez des animaux à La Réunion. Plateforme gratuite, locale et engagée.',
+    url: BASE_URL,
+    siteName: 'SauvCœur.re',
+    locale: 'fr_FR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '🐾 SauvCœur.re — Cause animale Réunion',
+    description: 'Retrouvez, signalez, adoptez des animaux à La Réunion.',
+  },
+  alternates: { canonical: BASE_URL },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -72,14 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             {/* Actions desktop */}
             <div className="hidden md:flex items-center gap-2 shrink-0 ml-auto">
-              <Link href="/mon-espace"
-                className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors px-3 py-2">
-                Mon espace
-              </Link>
-              <Link href="/connexion"
-                className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors px-3 py-2">
-                Connexion
-              </Link>
+              <NavAuth />
               <Link href="/animaux/nouveau"
                 className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                 <Plus className="h-4 w-4" />

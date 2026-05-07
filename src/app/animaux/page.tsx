@@ -168,10 +168,14 @@ function AnimauxPageInner() {
     return true
   }), [status, city, species, query, allAnimals])
 
+  // Tri : épinglés > boostés > autres, puis par date décroissante dans chaque groupe
+  const byDate = (a: PublicAnimal, b: PublicAnimal) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+
   const sorted = useMemo(() => [
-    ...filtered.filter(a => (a as any).pinned),
-    ...filtered.filter(a => (a as any).boosted && !(a as any).pinned),
-    ...filtered.filter(a => !(a as any).boosted && !(a as any).pinned),
+    ...filtered.filter(a => (a as any).pinned).sort(byDate),
+    ...filtered.filter(a => (a as any).boosted && !(a as any).pinned).sort(byDate),
+    ...filtered.filter(a => !(a as any).boosted && !(a as any).pinned).sort(byDate),
   ], [filtered])
 
   useEffect(() => { setPage(1) }, [status, city, species, query])
@@ -183,6 +187,14 @@ function AnimauxPageInner() {
     : status === 'found'    ? '🐾 Animaux trouvés'
     : status === 'to_adopt' ? "🏠 Animaux à adopter"
     : '🐾 Toutes les annonces'
+
+  const urgencyBanner = status === 'lost'
+    ? { bg: 'bg-red-50 border-red-200', text: 'text-red-800', emoji: '🚨', title: 'Nos dernières alertes urgentes', desc: 'Ces animaux ont besoin de vous MAINTENANT. Chaque partage peut les ramener à la maison.' }
+    : status === 'found'
+    ? { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800', emoji: '🔍', title: 'Animaux récemment trouvés à La Réunion', desc: 'Un animal trouvé attend peut-être un propriétaire qui le cherche. Reconnaissez-vous l\'un d\'eux ?' }
+    : status === 'to_adopt'
+    ? { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', emoji: '❤️', title: 'Ils cherchent une famille aimante', desc: 'Chaque adoption sauve une vie. Ces animaux méritent un foyer — peut-être le vôtre ?' }
+    : null
 
   const mapFilter  = (status || 'all') as 'all' | 'lost' | 'found' | 'to_adopt'
   const mapAnimals = allAnimals.map(a => ({
@@ -229,6 +241,20 @@ function AnimauxPageInner() {
           </button>
         </div>
       </div>
+
+      {/* Bannière d'urgence contextuelle */}
+      {urgencyBanner && (
+        <div className={`border rounded-2xl px-5 py-4 ${urgencyBanner.bg}`}>
+          <p className={`font-bold text-base flex items-center gap-2 ${urgencyBanner.text}`}>
+            <span className="text-xl">{urgencyBanner.emoji}</span>
+            {urgencyBanner.title}
+          </p>
+          <p className={`text-sm mt-1 ${urgencyBanner.text} opacity-80`}>{urgencyBanner.desc}</p>
+          <p className="text-xs mt-2 font-medium text-slate-500">
+            ↓ Classées de la plus récente à la plus ancienne
+          </p>
+        </div>
+      )}
 
       <AdBanner />
 

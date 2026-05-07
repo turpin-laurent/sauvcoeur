@@ -19,10 +19,14 @@ export default function ContactPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error()
-      setSent(true)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error ?? 'Une erreur est survenue. Écrivez-nous directement à sauvcoeur974@gmail.com')
+      } else {
+        setSent(true)
+      }
     } catch {
-      setError('Une erreur est survenue. Réessayez ou écrivez-nous directement.')
+      setError('Erreur réseau. Écrivez-nous directement à sauvcoeur974@gmail.com')
     } finally {
       setLoading(false)
     }

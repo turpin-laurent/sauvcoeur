@@ -2,16 +2,22 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, XCircle, Edit, Trash2, Users, Megaphone, BookOpen, Image, Zap, LogOut, Upload, Eye, BarChart2 } from 'lucide-react'
 import {
-  getAnimals, updateAnimal, deleteAnimal,
+  CheckCircle2, XCircle, Edit, Trash2, Users, Megaphone, BookOpen, Image,
+  Zap, LogOut, Upload, Eye, BarChart2, Mail, Shield, Plus, PawPrint, X, Save,
+} from 'lucide-react'
+import {
+  getAnimals, updateAnimal, deleteAnimal, saveAnimal,
   getBanners, saveBanners,
-  getPros, updatePro, deletePro,
+  getPros, updatePro, deletePro, savePro,
   isAdminValid, clearAdminSession,
-  type StoredAnimal, type StoredBanner, type StoredPro,
+  getNewsletterSubscribers, removeNewsletterSubscriber,
+  getAdminAccounts, saveAdminAccount, deleteAdminAccount,
+  type StoredAnimal, type StoredBanner, type StoredPro, type AdminAccount,
 } from '@/lib/animals/store'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
 
+// ── Constantes ────────────────────────────────────────────────
 const CAT_LABEL: Record<string, string> = {
   vet: 'Vétérinaires & santé', rescue: 'Associations & refuges',
   sitter: 'Garde & pensions', education: 'Éducation & comportement',
@@ -21,43 +27,29 @@ const CAT_EMOJI: Record<string, string> = {
   vet: '🩺', rescue: '❤️', sitter: '🏠', education: '🎓', groomer: '✂️', shop: '🛒', leisure: '🎉',
 }
 
-// ── Types ─────────────────────────────────────────────────────
-type Membre = { id: string; name: string; email: string; city: string; phone: string; role: string; created: string }
-type Boost  = { id: string; annonce: string; user: string; date: string; amount: string; status: string }
-type Pro    = { id: string; name: string; category: string; city: string; verified: boolean; boosted: boolean }
-
-// ── Données mock (membres, boosts, pros) ──────────────────────
-const INIT_MEMBRES: Membre[] = [
-  { id: 'u1', name: 'Marie Dupont',  email: 'marie@ex.re',  city: 'Saint-Denis',  phone: '0692000001', role: 'user',  created: '2026-04-20' },
-  { id: 'u2', name: 'Paul Martin',   email: 'paul@ex.re',   city: 'Le Tampon',    phone: '',           role: 'asso',  created: '2026-04-22' },
-  { id: 'u3', name: 'Julie Rivière', email: 'julie@ex.re',  city: 'Saint-Paul',   phone: '0692000003', role: 'user',  created: '2026-04-25' },
-]
-const INIT_PROS: Pro[] = [
-  { id: 'p1', name: 'Clinique du Volcan', category: 'Vétérinaire', city: 'Saint-Pierre', verified: true,  boosted: false },
-  { id: 'p2', name: 'Patte Douce',        category: 'Pet-sitter',  city: 'Saint-Paul',   verified: true,  boosted: true  },
-  { id: 'p3', name: 'Éducation Canine',   category: 'Éducateur',   city: 'Le Tampon',    verified: false, boosted: false },
-]
-
-const STATUS_BADGE: Record<string, string> = {
+const STATUS_BADGE:  Record<string, string> = {
   lost: 'bg-red-100 text-red-700', found: 'bg-amber-100 text-amber-700', to_adopt: 'bg-emerald-100 text-emerald-700',
 }
-const STATUS_LABEL: Record<string, string> = { lost: 'Perdu', found: 'Trouvé', to_adopt: 'À adopter' }
-const MOD_BADGE: Record<string, string> = {
+const STATUS_LABEL:  Record<string, string> = { lost: 'Perdu', found: 'Trouvé', to_adopt: 'À adopter' }
+const MOD_BADGE:     Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700',
 }
-const MOD_LABEL: Record<string, string> = { pending: 'En attente', approved: 'Approuvée', rejected: 'Refusée' }
-const SPECIES_LABEL: Record<string, string> = { dog: 'Chien', cat: 'Chat', bird: 'Oiseau', rabbit: 'Lapin', other: 'Autre' }
+const MOD_LABEL:     Record<string, string> = { pending: 'En attente', approved: 'Approuvée', rejected: 'Refusée' }
+const SPECIES_LABEL: Record<string, string> = { dog: 'Chien', cat: 'Chat', bird: 'Oiseau', rabbit: 'Lapin', other: 'NAC' }
 
 const TABS = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: <BarChart2 className="h-4 w-4" /> },
-  { id: 'annonces',  label: 'Annonces',        icon: <Megaphone className="h-4 w-4" /> },
-  { id: 'membres',   label: 'Membres',         icon: <Users className="h-4 w-4" /> },
-  { id: 'boosts',    label: 'Boosts payés',    icon: <Zap className="h-4 w-4" /> },
-  { id: 'bannieres', label: 'Bannières',       icon: <Image className="h-4 w-4" /> },
-  { id: 'pros',      label: 'Annuaire pros',   icon: <BookOpen className="h-4 w-4" /> },
+  { id: 'dashboard',  label: 'Tableau de bord',  icon: <BarChart2 className="h-4 w-4" /> },
+  { id: 'annonces',   label: 'Annonces',          icon: <Megaphone className="h-4 w-4" /> },
+  { id: 'publier',    label: 'Publier',            icon: <Plus className="h-4 w-4" /> },
+  { id: 'membres',    label: 'Membres',            icon: <Users className="h-4 w-4" /> },
+  { id: 'newsletter', label: 'Newsletter',         icon: <Mail className="h-4 w-4" /> },
+  { id: 'boosts',     label: 'Boosts payés',       icon: <Zap className="h-4 w-4" /> },
+  { id: 'bannieres',  label: 'Bannières',          icon: <Image className="h-4 w-4" /> },
+  { id: 'pros',       label: 'Annuaire pros',      icon: <BookOpen className="h-4 w-4" /> },
+  { id: 'admins',     label: 'Administrateurs',    icon: <Shield className="h-4 w-4" /> },
 ]
 
-// ── Mock pros initiaux ────────────────────────────────────────
+// ── Init pros mock ────────────────────────────────────────────
 const INIT_PROS_ADMIN: StoredPro[] = [
   { id: 'p1', business_name: 'Clinique Vétérinaire du Volcan', contact_name: 'Dr. Martin', category: 'vet',      description: 'Soins généraux, urgences 24h/24.', city: 'Saint-Pierre', phone: '0262 00 00 01', email: 'vet@example.re', is_verified: true,  is_featured: true,  is_association: false, created_at: '2026-04-01T00:00:00Z' },
   { id: 'p2', business_name: 'Patte Douce Pet-sitting',        contact_name: 'Lola T.',    category: 'sitter',   description: 'Garde à domicile.',               city: 'Saint-Paul',   phone: '0692 00 00 03', email: 'patte@example.re', is_verified: true,  is_featured: true,  is_association: false, created_at: '2026-04-03T00:00:00Z' },
@@ -80,12 +72,152 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
-// ── Lecteur impression localStorage ──────────────────────────
 function getBannerImpressions(id: string): number {
   if (typeof window === 'undefined') return 0
   return parseInt(localStorage.getItem(`sc_banner_imp_${id}`) ?? '0', 10)
 }
 
+// ── Types membres ─────────────────────────────────────────────
+type RealMembre = { id: string; name: string; email: string; newsletter: boolean; created: string }
+
+function getRealMembres(): RealMembre[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const users = JSON.parse(localStorage.getItem('sauvcoeur_users') ?? '{}')
+    return Object.entries(users).map(([email, data]: [string, any]) => ({
+      id: email,
+      name: data.name ?? '—',
+      email,
+      newsletter: data.newsletter ?? false,
+      created: '—',
+    }))
+  } catch { return [] }
+}
+
+// ── QuickPost ─────────────────────────────────────────────────
+function QuickPostForm({ onDone }: { onDone: () => void }) {
+  const inputCls = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500'
+  const [form, setForm] = useState({
+    status: 'lost' as 'lost' | 'found' | 'to_adopt',
+    species: 'dog' as string,
+    gender: 'unknown' as string,
+    name: '',
+    age_years: '',
+    color: '',
+    specific_signs: '',
+    location_city: '',
+    contact_email: 'sauvcoeur974@gmail.com',
+    moderation_status: 'approved' as 'approved' | 'pending',
+  })
+  const [saving, setSaving] = useState(false)
+
+  const f = (key: string, val: unknown) => setForm(p => ({ ...p, [key]: val }))
+
+  const handleSave = () => {
+    if (!form.species || !form.location_city) return
+    setSaving(true)
+    saveAnimal({
+      id: `admin_${Date.now()}`,
+      status: form.status,
+      species: form.species,
+      gender: form.gender,
+      name: form.name.trim() || undefined,
+      age_years: form.age_years ? Number(form.age_years) : undefined,
+      color: form.color.trim() || undefined,
+      specific_signs: form.specific_signs.trim() || undefined,
+      location_city: form.location_city,
+      contact_type: 'email',
+      contact_email: form.contact_email,
+      photos: [],
+      created_at: new Date().toISOString(),
+      moderation_status: form.moderation_status,
+      boosted: false,
+      pinned: false,
+      author_id: 'admin',
+      author_name: 'Équipe SauvCœur',
+    })
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 max-w-xl">
+      <h2 className="font-bold text-slate-900 flex items-center gap-2"><PawPrint className="h-5 w-5 text-emerald-600" /> Publication rapide d'annonce</h2>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Statut *</label>
+          <select value={form.status} onChange={e => f('status', e.target.value)} className={inputCls}>
+            <option value="lost">Perdu</option>
+            <option value="found">Trouvé</option>
+            <option value="to_adopt">À adopter</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Espèce *</label>
+          <select value={form.species} onChange={e => f('species', e.target.value)} className={inputCls}>
+            <option value="dog">Chien</option><option value="cat">Chat</option>
+            <option value="bird">Oiseau</option><option value="rabbit">Lapin</option>
+            <option value="other">NAC / Autre</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Nom</label>
+          <input value={form.name} onChange={e => f('name', e.target.value)} placeholder="Rex, Mimi…" className={inputCls} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Âge (années)</label>
+          <input type="number" min={0} max={30} value={form.age_years} onChange={e => f('age_years', e.target.value)} className={inputCls} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Sexe</label>
+          <select value={form.gender} onChange={e => f('gender', e.target.value)} className={inputCls}>
+            <option value="male">Mâle</option><option value="female">Femelle</option><option value="unknown">Inconnu</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Couleur</label>
+          <input value={form.color} onChange={e => f('color', e.target.value)} placeholder="Noir et blanc…" className={inputCls} />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-slate-600 block mb-1">Signes distinctifs</label>
+        <textarea rows={2} value={form.specific_signs} onChange={e => f('specific_signs', e.target.value)}
+          placeholder="Description, signes particuliers…" className={`${inputCls} resize-none`} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Commune *</label>
+          <select value={form.location_city} onChange={e => f('location_city', e.target.value)} className={inputCls}>
+            <option value="">— Sélectionner —</option>
+            {COMMUNES_974.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-600 block mb-1">Modération</label>
+          <select value={form.moderation_status} onChange={e => f('moderation_status', e.target.value)} className={inputCls}>
+            <option value="approved">Approuvée directement ✓</option>
+            <option value="pending">En attente</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-slate-600 block mb-1">Email de contact</label>
+        <input type="email" value={form.contact_email} onChange={e => f('contact_email', e.target.value)} className={inputCls} />
+      </div>
+      <button onClick={handleSave} disabled={saving || !form.location_city}
+        className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors">
+        <Save className="h-4 w-4" />
+        {saving ? 'Enregistrement…' : 'Publier l\'annonce'}
+      </button>
+    </div>
+  )
+}
+
+// ── Page principale ───────────────────────────────────────────
 export default function ManagePage() {
   const router = useRouter()
 
@@ -93,27 +225,34 @@ export default function ManagePage() {
     if (!isAdminValid()) router.replace('/manage/login')
   }, [router])
 
-  const [tab,          setTab]          = useState('dashboard')
-  const [annonces,     setAnnonces]     = useState<StoredAnimal[]>([])
-  const [membres,      setMembres]      = useState<Membre[]>(INIT_MEMBRES)
-  const [banners,      setBannersState] = useState<StoredBanner[]>([])
-  const [prosAdmin,    setProsAdmin]    = useState<StoredPro[]>(INIT_PROS_ADMIN)
+  const [tab,           setTab]           = useState('dashboard')
+  const [annonces,      setAnnonces]      = useState<StoredAnimal[]>([])
+  const [membres,       setMembres]       = useState<RealMembre[]>([])
+  const [banners,       setBannersState]  = useState<StoredBanner[]>([])
+  const [prosAdmin,     setProsAdmin]     = useState<StoredPro[]>(INIT_PROS_ADMIN)
   const [prosCatFilter, setProsCatFilter] = useState('all')
-  const [impressions,  setImpressions]  = useState<Record<string, number>>({})
-  const [editAnnonce,  setEditAnnonce]  = useState<StoredAnimal | null>(null)
-  const [editMembre,   setEditMembre]   = useState<Membre | null>(null)
-  const [editBanner,   setEditBanner]   = useState<StoredBanner | null>(null)
-  const [editPro,      setEditPro]      = useState<StoredPro | null>(null)
+  const [impressions,   setImpressions]   = useState<Record<string, number>>({})
+  const [newsletter,    setNewsletter]    = useState<{email:string;subscribed_at:string}[]>([])
+  const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([])
+  const [editAnnonce,   setEditAnnonce]   = useState<StoredAnimal | null>(null)
+  const [editBanner,    setEditBanner]    = useState<StoredBanner | null>(null)
+  const [editPro,       setEditPro]       = useState<StoredPro | null>(null)
+  const [editAdmin,     setEditAdmin]     = useState<AdminAccount | null>(null)
+  const [newAdmin,      setNewAdmin]      = useState({ name:'', email:'', password:'' })
+  const [showNewAdmin,  setShowNewAdmin]  = useState(false)
+  const [quickDone,     setQuickDone]     = useState(false)
 
   useEffect(() => {
     const a = getAnimals()
     const b = getBanners()
     setAnnonces(a)
     setBannersState(b)
+    setMembres(getRealMembres())
+    setNewsletter(getNewsletterSubscribers())
+    setAdminAccounts(getAdminAccounts())
     const imp: Record<string, number> = {}
     b.forEach(x => { imp[x.id] = getBannerImpressions(x.id) })
     setImpressions(imp)
-    // Charger les pros depuis localStorage et merger avec les mocks
     const storedPros = getPros()
     if (storedPros.length > 0) {
       const storedIds = new Set(storedPros.map(p => p.id))
@@ -121,39 +260,29 @@ export default function ManagePage() {
     }
   }, [])
 
-  const boosts: Boost[] = annonces
-    .filter(a => a.boosted)
-    .map(a => ({
-      id:      a.id,
-      annonce: `${a.name ?? 'Inconnu'} (${STATUS_LABEL[a.status] ?? a.status})`,
-      user:    a.author_name,
-      date:    a.created_at.slice(0, 10),
-      amount:  '4,99 €',
-      status:  'active',
-    }))
+  const boosts = annonces.filter(a => a.boosted).map(a => ({
+    id: a.id,
+    annonce: `${a.name ?? 'Inconnu'} (${STATUS_LABEL[a.status] ?? a.status})`,
+    user:    a.author_name,
+    date:    a.created_at.slice(0, 10),
+    amount:  '4,99 €',
+    status:  'active',
+  }))
 
   const pending  = annonces.filter(a => a.moderation_status === 'pending').length
   const approved = annonces.filter(a => a.moderation_status === 'approved').length
 
   const saveAnnonce = (a: StoredAnimal) => {
-    updateAnimal(a.id, a)
-    setAnnonces(getAnimals())
-    setEditAnnonce(null)
+    updateAnimal(a.id, a); setAnnonces(getAnimals()); setEditAnnonce(null)
   }
   const removeAnnonce = (id: string) => {
     if (!confirm('Supprimer cette annonce ?')) return
-    deleteAnimal(id)
-    setAnnonces(getAnimals())
+    deleteAnimal(id); setAnnonces(getAnimals())
   }
   const saveBannersLocal = (b: StoredBanner[]) => {
-    saveBanners(b)
-    setBannersState([...b])
+    saveBanners(b); setBannersState([...b])
   }
-
-  const handleLogout = () => {
-    clearAdminSession()
-    router.push('/manage/login')
-  }
+  const handleLogout = () => { clearAdminSession(); router.push('/manage/login') }
 
   const inputCls = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500'
 
@@ -174,12 +303,12 @@ export default function ManagePage() {
         </button>
       </div>
 
-      {/* Stats rapides */}
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Annonces',   value: annonces.length, color: 'text-emerald-600' },
           { label: 'Membres',    value: membres.length,  color: 'text-blue-600' },
-          { label: 'Boosts',     value: boosts.length,   color: 'text-orange-600' },
+          { label: 'Newsletter', value: newsletter.length, color: 'text-purple-600' },
           { label: 'En attente', value: pending,          color: 'text-red-600' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white border border-slate-200 rounded-2xl p-4 text-center">
@@ -211,7 +340,6 @@ export default function ManagePage() {
       {tab === 'dashboard' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Annonces par statut */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Megaphone className="h-4 w-4 text-emerald-600" /> Annonces</h3>
               <div className="space-y-2">
@@ -235,24 +363,18 @@ export default function ManagePage() {
               </div>
             </div>
 
-            {/* Membres */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Users className="h-4 w-4 text-blue-600" /> Membres</h3>
               <p className="text-4xl font-bold text-blue-600">{membres.length}</p>
+              <p className="text-sm text-slate-500">inscrits via le site</p>
               <div className="space-y-1 text-sm text-slate-500">
-                {[
-                  { label: 'Utilisateurs',    value: membres.filter(m => m.role === 'user').length },
-                  { label: 'Associations',    value: membres.filter(m => m.role === 'asso').length },
-                  { label: 'Professionnels',  value: membres.filter(m => m.role === 'pro').length },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between">
-                    <span>{label}</span><span className="font-semibold text-slate-700">{value}</span>
-                  </div>
-                ))}
+                <div className="flex justify-between">
+                  <span>Abonnés newsletter</span>
+                  <span className="font-semibold text-slate-700">{newsletter.length}</span>
+                </div>
               </div>
             </div>
 
-            {/* Boosts & Revenus */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Zap className="h-4 w-4 text-orange-500" /> Boosts & Revenus</h3>
               <p className="text-4xl font-bold text-orange-500">{boosts.length}</p>
@@ -267,26 +389,8 @@ export default function ManagePage() {
                 </div>
               </div>
             </div>
-
-            {/* Bannières & Impressions */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 sm:col-span-2 lg:col-span-3">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2"><Eye className="h-4 w-4 text-purple-600" /> Bannières — Impressions</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {banners.map(b => (
-                  <div key={b.id} className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs font-semibold text-slate-600 truncate">{b.slot}</p>
-                    <p className="text-2xl font-bold text-purple-600 mt-1">{impressions[b.id] ?? 0}</p>
-                    <p className="text-xs text-slate-400">impressions</p>
-                    <span className={`text-xs font-semibold rounded-full px-2 py-0.5 mt-1 inline-block ${b.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
-                      {b.active ? '● Active' : '○ Inactive'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* Actions rapides */}
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
             <h3 className="font-semibold text-emerald-800 mb-3">Actions rapides</h3>
             <div className="flex flex-wrap gap-2">
@@ -295,13 +399,17 @@ export default function ManagePage() {
                 <Megaphone className="h-4 w-4" /> Modérer les annonces
                 {pending > 0 && <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{pending}</span>}
               </button>
+              <button onClick={() => setTab('publier')}
+                className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
+                <Plus className="h-4 w-4" /> Publier une annonce
+              </button>
+              <button onClick={() => setTab('newsletter')}
+                className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
+                <Mail className="h-4 w-4" /> Newsletter ({newsletter.length})
+              </button>
               <button onClick={() => setTab('bannieres')}
                 className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
                 <Image className="h-4 w-4" /> Gérer les bannières
-              </button>
-              <button onClick={() => setTab('membres')}
-                className="flex items-center gap-1.5 bg-white border border-emerald-300 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
-                <Users className="h-4 w-4" /> Voir les membres
               </button>
             </div>
           </div>
@@ -381,6 +489,11 @@ export default function ManagePage() {
                     className={inputCls}>
                     {COMMUNES_974.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Email de contact</label>
+                  <input type="email" value={editAnnonce.contact_email ?? ''} onChange={e => setEditAnnonce({ ...editAnnonce, contact_email: e.target.value })}
+                    className={inputCls} />
                 </div>
                 <div className="flex gap-4 pt-1">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -491,74 +604,124 @@ export default function ManagePage() {
         </div>
       )}
 
+      {/* ── PUBLIER RAPIDEMENT ── */}
+      {tab === 'publier' && (
+        <div>
+          {quickDone ? (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center space-y-3">
+              <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto" />
+              <p className="font-bold text-slate-900">Annonce publiée !</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={() => { setQuickDone(false); setAnnonces(getAnimals()) }}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
+                  Publier une autre annonce
+                </button>
+                <button onClick={() => { setTab('annonces'); setAnnonces(getAnimals()) }}
+                  className="border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-semibold">
+                  Voir les annonces
+                </button>
+              </div>
+            </div>
+          ) : (
+            <QuickPostForm onDone={() => { setQuickDone(true); setAnnonces(getAnimals()) }} />
+          )}
+        </div>
+      )}
+
       {/* ── MEMBRES ── */}
       {tab === 'membres' && (
         <div className="space-y-3">
-          {editMembre && (
-            <Modal title="Modifier le membre" onClose={() => setEditMembre(null)}>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Nom</label>
-                  <input value={editMembre.name}  onChange={e => setEditMembre({ ...editMembre, name:  e.target.value })}
-                    className={inputCls} placeholder="Nom" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
-                  <input value={editMembre.email} onChange={e => setEditMembre({ ...editMembre, email: e.target.value })}
-                    className={inputCls} placeholder="Email" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Ville</label>
-                  <select value={editMembre.city} onChange={e => setEditMembre({ ...editMembre, city: e.target.value })}
-                    className={inputCls}>
-                    <option value="">—</option>
-                    {COMMUNES_974.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Rôle</label>
-                  <select value={editMembre.role} onChange={e => setEditMembre({ ...editMembre, role: e.target.value })}
-                    className={inputCls}>
-                    <option value="user">Utilisateur</option>
-                    <option value="asso">Association</option>
-                    <option value="pro">Professionnel</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => setEditMembre(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
-                  <button onClick={() => { setMembres(m => m.map(x => x.id === editMembre.id ? editMembre : x)); setEditMembre(null) }}
-                    className="flex-1 bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold">Enregistrer</button>
-                </div>
-              </div>
-            </Modal>
-          )}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>{['Nom','Email','Ville','Rôle','Inscrit le','Actions'].map(h =>
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-slate-700 text-xs whitespace-nowrap">{h}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {membres.map(m => (
-                  <tr key={m.id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">{m.name}</td>
-                    <td className="px-4 py-3 text-slate-500">{m.email}</td>
-                    <td className="px-4 py-3 text-slate-500">{m.city || '—'}</td>
-                    <td className="px-4 py-3"><span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700">{m.role}</span></td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{m.created}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button onClick={() => setEditMembre(m)} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors"><Edit className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => setMembres(p => p.filter(x => x.id !== m.id))} className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </td>
+          {membres.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
+              <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="font-medium">Aucun membre inscrit pour l'instant</p>
+              <p className="text-sm mt-1">Les comptes créés via le site apparaîtront ici</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>{['Nom','Email','Newsletter','Actions'].map(h =>
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-slate-700 text-xs whitespace-nowrap">{h}</th>)}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {membres.map(m => (
+                    <tr key={m.id}>
+                      <td className="px-4 py-3 font-medium text-slate-900">{m.name}</td>
+                      <td className="px-4 py-3 text-slate-500">{m.email}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${m.newsletter ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {m.newsletter ? '✓ Abonné' : 'Non abonné'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">
+                        <a href={`mailto:${m.email}`} className="text-emerald-600 hover:underline text-xs">Contacter</a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── NEWSLETTER ── */}
+      {tab === 'newsletter' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-bold text-slate-900">{newsletter.length} abonné(s) newsletter</h2>
+              <p className="text-sm text-slate-500 mt-0.5">Liste complète des inscrits à la newsletter hebdomadaire</p>
+            </div>
+            {newsletter.length > 0 && (
+              <button
+                onClick={() => {
+                  const csv = 'Email,Date\n' + newsletter.map(s => `${s.email},${s.subscribed_at.slice(0,10)}`).join('\n')
+                  const a = document.createElement('a')
+                  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+                  a.download = 'newsletter_sauvcoeur.csv'
+                  a.click()
+                }}
+                className="flex items-center gap-1.5 bg-emerald-600 text-white text-sm font-semibold px-3 py-2 rounded-xl hover:bg-emerald-700 transition-colors">
+                ⬇ Exporter CSV
+              </button>
+            )}
           </div>
+          {newsletter.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
+              <Mail className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="font-medium">Aucun abonné pour l'instant</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>{['Email','Date d\'inscription','Actions'].map(h =>
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-slate-700 text-xs">{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {newsletter.map(s => (
+                    <tr key={s.email}>
+                      <td className="px-4 py-3 font-medium text-slate-900">{s.email}</td>
+                      <td className="px-4 py-3 text-slate-500">{s.subscribed_at.slice(0,10)}</td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => {
+                          if (!confirm(`Désabonner ${s.email} ?`)) return
+                          removeNewsletterSubscriber(s.email)
+                          setNewsletter(getNewsletterSubscribers())
+                        }} className="text-xs text-red-500 hover:text-red-700 transition-colors">
+                          Désabonner
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -634,8 +797,6 @@ export default function ManagePage() {
                     </button>
                   </div>
                 </div>
-
-                {/* Aperçu */}
                 {b.active && (
                   b.image
                     ? <div className="rounded-xl overflow-hidden border border-slate-200">
@@ -660,26 +821,22 @@ export default function ManagePage() {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Nom de l'établissement</label>
-                  <input value={editPro.business_name} onChange={e => setEditPro({ ...editPro, business_name: e.target.value })}
-                    className={inputCls} />
+                  <input value={editPro.business_name} onChange={e => setEditPro({ ...editPro, business_name: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Nom du responsable</label>
-                  <input value={editPro.contact_name} onChange={e => setEditPro({ ...editPro, contact_name: e.target.value })}
-                    className={inputCls} />
+                  <input value={editPro.contact_name} onChange={e => setEditPro({ ...editPro, contact_name: e.target.value })} className={inputCls} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Catégorie</label>
-                    <select value={editPro.category} onChange={e => setEditPro({ ...editPro, category: e.target.value })}
-                      className={inputCls}>
+                    <select value={editPro.category} onChange={e => setEditPro({ ...editPro, category: e.target.value })} className={inputCls}>
                       {Object.entries(CAT_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Commune</label>
-                    <select value={editPro.city} onChange={e => setEditPro({ ...editPro, city: e.target.value })}
-                      className={inputCls}>
+                    <select value={editPro.city} onChange={e => setEditPro({ ...editPro, city: e.target.value })} className={inputCls}>
                       {COMMUNES_974.map(c => <option key={c.slug} value={c.name}>{c.name}</option>)}
                     </select>
                   </div>
@@ -687,19 +844,16 @@ export default function ManagePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Téléphone</label>
-                    <input type="tel" value={editPro.phone ?? ''} onChange={e => setEditPro({ ...editPro, phone: e.target.value })}
-                      className={inputCls} />
+                    <input type="tel" value={editPro.phone ?? ''} onChange={e => setEditPro({ ...editPro, phone: e.target.value })} className={inputCls} />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
-                    <input type="email" value={editPro.email ?? ''} onChange={e => setEditPro({ ...editPro, email: e.target.value })}
-                      className={inputCls} />
+                    <input type="email" value={editPro.email ?? ''} onChange={e => setEditPro({ ...editPro, email: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Site web</label>
-                  <input type="url" value={editPro.website ?? ''} onChange={e => setEditPro({ ...editPro, website: e.target.value })}
-                    className={inputCls} placeholder="https://…" />
+                  <input type="url" value={editPro.website ?? ''} onChange={e => setEditPro({ ...editPro, website: e.target.value })} className={inputCls} placeholder="https://…" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 block mb-1">Description</label>
@@ -708,18 +862,15 @@ export default function ManagePage() {
                 </div>
                 <div className="flex gap-4 flex-wrap pt-1">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editPro.is_verified}
-                      onChange={e => setEditPro({ ...editPro, is_verified: e.target.checked })} className="accent-emerald-600" />
+                    <input type="checkbox" checked={editPro.is_verified} onChange={e => setEditPro({ ...editPro, is_verified: e.target.checked })} className="accent-emerald-600" />
                     <span className="text-sm text-slate-700">✓ Vérifié</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editPro.is_featured}
-                      onChange={e => setEditPro({ ...editPro, is_featured: e.target.checked })} className="accent-orange-500" />
+                    <input type="checkbox" checked={editPro.is_featured} onChange={e => setEditPro({ ...editPro, is_featured: e.target.checked })} className="accent-orange-500" />
                     <span className="text-sm text-slate-700">⭐ En avant (19 €/mois)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editPro.is_association}
-                      onChange={e => setEditPro({ ...editPro, is_association: e.target.checked })} className="accent-blue-500" />
+                    <input type="checkbox" checked={editPro.is_association} onChange={e => setEditPro({ ...editPro, is_association: e.target.checked })} className="accent-blue-500" />
                     <span className="text-sm text-slate-700">🤝 Association</span>
                   </label>
                 </div>
@@ -735,7 +886,6 @@ export default function ManagePage() {
             </Modal>
           )}
 
-          {/* Filtre catégorie */}
           <div className="flex gap-2 flex-wrap">
             {['all', ...Object.keys(CAT_LABEL)].map(cat => (
               <button key={cat} onClick={() => setProsCatFilter(cat)}
@@ -795,7 +945,7 @@ export default function ManagePage() {
                           className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors">
                           <Edit className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => { if (!confirm('Supprimer ce professionnel ?')) return; deletePro(p.id); setProsAdmin(prev => prev.filter(x => x.id !== p.id)) }}
+                        <button onClick={() => { if (!confirm('Supprimer ?')) return; deletePro(p.id); setProsAdmin(prev => prev.filter(x => x.id !== p.id)) }}
                           className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -808,6 +958,120 @@ export default function ManagePage() {
           </div>
         </div>
       )}
+
+      {/* ── ADMINISTRATEURS ── */}
+      {tab === 'admins' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-slate-900">Comptes administrateurs</h2>
+            <button onClick={() => setShowNewAdmin(true)}
+              className="flex items-center gap-1.5 bg-slate-800 text-white text-sm font-semibold px-3 py-2 rounded-xl hover:bg-slate-900 transition-colors">
+              <Plus className="h-4 w-4" /> Ajouter un admin
+            </button>
+          </div>
+
+          {showNewAdmin && (
+            <Modal title="Ajouter un administrateur" onClose={() => setShowNewAdmin(false)}>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Nom</label>
+                  <input value={newAdmin.name} onChange={e => setNewAdmin(n => ({ ...n, name: e.target.value }))} className={inputCls} placeholder="Nom de l'admin" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
+                  <input type="email" value={newAdmin.email} onChange={e => setNewAdmin(n => ({ ...n, email: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Mot de passe</label>
+                  <input type="password" value={newAdmin.password} onChange={e => setNewAdmin(n => ({ ...n, password: e.target.value }))} className={inputCls} />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setShowNewAdmin(false)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
+                  <button onClick={() => {
+                    if (!newAdmin.name || !newAdmin.email || !newAdmin.password) return
+                    const account: AdminAccount = {
+                      id: `admin_${Date.now()}`,
+                      name: newAdmin.name,
+                      email: newAdmin.email,
+                      password: newAdmin.password,
+                      created_at: new Date().toISOString(),
+                    }
+                    saveAdminAccount(account)
+                    setAdminAccounts(getAdminAccounts())
+                    setNewAdmin({ name: '', email: '', password: '' })
+                    setShowNewAdmin(false)
+                  }} className="flex-1 bg-slate-800 text-white rounded-xl py-2.5 text-sm font-semibold">Créer</button>
+                </div>
+              </div>
+            </Modal>
+          )}
+
+          {editAdmin && (
+            <Modal title="Modifier l'administrateur" onClose={() => setEditAdmin(null)}>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Nom</label>
+                  <input value={editAdmin.name} onChange={e => setEditAdmin({ ...editAdmin, name: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
+                  <input type="email" value={editAdmin.email} onChange={e => setEditAdmin({ ...editAdmin, email: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Nouveau mot de passe</label>
+                  <input type="password" value={editAdmin.password} onChange={e => setEditAdmin({ ...editAdmin, password: e.target.value })} className={inputCls} placeholder="Laisser vide pour ne pas changer" />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setEditAdmin(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>
+                  <button onClick={() => {
+                    saveAdminAccount(editAdmin)
+                    setAdminAccounts(getAdminAccounts())
+                    setEditAdmin(null)
+                  }} className="flex-1 bg-slate-800 text-white rounded-xl py-2.5 text-sm font-semibold">Enregistrer</button>
+                </div>
+              </div>
+            </Modal>
+          )}
+
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>{['Nom','Email','Créé le','Actions'].map(h =>
+                  <th key={h} className="text-left px-4 py-3 font-semibold text-slate-700 text-xs">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {adminAccounts.map(a => (
+                  <tr key={a.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{a.name}</td>
+                    <td className="px-4 py-3 text-slate-500">{a.email}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{a.created_at.slice(0,10)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        <button onClick={() => setEditAdmin({ ...a })}
+                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors">
+                          <Edit className="h-3.5 w-3.5" />
+                        </button>
+                        {adminAccounts.length > 1 && (
+                          <button onClick={() => {
+                            if (!confirm(`Supprimer l'admin ${a.name} ?`)) return
+                            deleteAdminAccount(a.id)
+                            setAdminAccounts(getAdminAccounts())
+                          }} className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-slate-400">⚠️ Minimum 1 compte administrateur requis. Le dernier compte ne peut pas être supprimé.</p>
+        </div>
+      )}
+
     </main>
   )
 }
@@ -848,7 +1112,6 @@ function BannerModal({ banner, onClose, onSave }: {
           Emplacement : <strong>{form.slot}</strong>
         </p>
 
-        {/* Upload image 468×60 */}
         <div>
           <label className="text-sm font-medium text-slate-700 block mb-2">
             Image bannière <span className="text-slate-400 font-normal">(468×60 recommandé)</span>
@@ -862,54 +1125,34 @@ function BannerModal({ banner, onClose, onSave }: {
             {form.image && (
               <button type="button" onClick={() => setForm(f => ({ ...f, image: undefined }))}
                 className="text-xs text-red-500 hover:text-red-700 transition-colors mt-2">
-                ✕ Supprimer l'image
+                ✕ Supprimer
               </button>
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-
-          {/* Aperçu image */}
           {form.image && (
             <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-              <img src={form.image} alt="Aperçu bannière"
-                style={{ width: 468, height: 60, objectFit: 'cover', maxWidth: '100%' }} />
+              <img src={form.image} alt="Aperçu" style={{ width: 468, height: 60, objectFit: 'cover', maxWidth: '100%' }} />
             </div>
           )}
         </div>
 
-        {/* Texte (fallback si pas d'image) */}
         <div>
           <label className="text-sm font-medium text-slate-700 block mb-1">
             Texte affiché <span className="text-slate-400 font-normal">(si pas d'image)</span>
           </label>
-          <input value={form.text} onChange={e => setForm({ ...form, text: e.target.value })}
-            className={inputCls} placeholder="Votre publicité ici…" />
+          <input value={form.text} onChange={e => setForm({ ...form, text: e.target.value })} className={inputCls} placeholder="Votre publicité ici…" />
         </div>
 
-        {/* URL */}
         <div>
           <label className="text-sm font-medium text-slate-700 block mb-1">URL du lien</label>
-          <input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })}
-            className={inputCls} placeholder="https://…" />
+          <input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} className={inputCls} placeholder="https://…" />
         </div>
 
-        {/* Active */}
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={form.active}
-            onChange={e => setForm({ ...form, active: e.target.checked })} className="accent-emerald-600" />
-          <span className="text-sm text-slate-700">Bannière active (visible sur le site)</span>
+          <input type="checkbox" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} className="accent-emerald-600" />
+          <span className="text-sm text-slate-700">Bannière active</span>
         </label>
-
-        {/* Aperçu texte (si pas d'image) */}
-        {!form.image && (
-          <div>
-            <p className="text-xs text-slate-500 mb-1">Aperçu texte</p>
-            <a href={form.url} target="_blank" rel="noopener noreferrer"
-              style={{ maxWidth: 468 }} className="flex items-center gap-3 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 hover:border-emerald-500 transition-colors">
-              🐾 {form.text || '(texte vide)'}
-            </a>
-          </div>
-        )}
 
         <div className="flex gap-2 pt-1">
           <button onClick={onClose} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm">Annuler</button>

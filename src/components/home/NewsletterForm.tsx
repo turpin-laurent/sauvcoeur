@@ -1,15 +1,22 @@
 'use client'
 
 import { useState } from 'react'
+import { addNewsletterSubscriber } from '@/lib/animals/store'
 
 export function NewsletterForm() {
-  const [email, setEmail]     = useState('')
+  const [email,   setEmail]   = useState('')
   const [success, setSuccess] = useState(false)
+  const [already, setAlready] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Branchement API newsletter à faire
-    setSuccess(true)
+    const isNew = addNewsletterSubscriber(email)
+    if (isNew) {
+      setSuccess(true)
+    } else {
+      setAlready(true)
+      setTimeout(() => setAlready(false), 3000)
+    }
   }
 
   if (success) {
@@ -21,21 +28,26 @@ export function NewsletterForm() {
   }
 
   return (
-    <form className="flex gap-2 w-full sm:w-auto" onSubmit={handleSubmit}>
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="votre@email.re"
-        className="flex-1 sm:w-56 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-      />
-      <button
-        type="submit"
-        className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors whitespace-nowrap"
-      >
-        S'abonner
-      </button>
+    <form className="flex flex-col gap-2 w-full sm:w-auto" onSubmit={handleSubmit}>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="votre@email.re"
+          className="flex-1 sm:w-56 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+        />
+        <button
+          type="submit"
+          className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors whitespace-nowrap"
+        >
+          S'abonner
+        </button>
+      </div>
+      {already && (
+        <p className="text-amber-600 text-xs">Vous êtes déjà inscrit(e) à la newsletter.</p>
+      )}
     </form>
   )
 }
