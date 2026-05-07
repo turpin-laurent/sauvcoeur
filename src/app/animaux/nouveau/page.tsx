@@ -14,7 +14,7 @@ function IconFacebook({ className }: { className?: string }) {
 }
 import { COMMUNES_974 } from '@/lib/geo/communes974'
 import { containsSaleKeywords } from '@/lib/validators/animal'
-import { saveAnimal, filesToBase64, getAnimalById } from '@/lib/animals/store'
+import { filesToBase64 } from '@/lib/animals/store'
 import { useAuth } from '@/lib/auth/context'
 
 const STEPS = ['Statut', 'Animal', 'Localisation', 'Contact & Photos', 'Confirmation']

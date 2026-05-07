@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, Zap, ArrowLeft, CreditCard, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { getAnimalById, updateAnimal } from '@/lib/animals/store'
 import type { StoredAnimal } from '@/lib/animals/store'
 
 export default function BoostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,11 +17,15 @@ export default function BoostPage({ params }: { params: Promise<{ id: string }> 
   const [checking, setChecking] = useState(false)
   const [error,    setError]    = useState('')
 
-  // Charger l'animal
+  // Charger l'animal depuis l'API
   useEffect(() => {
-    const a = getAnimalById(id)
-    if (a) setAnimal(a)
-    else router.replace('/animaux')
+    fetch(`/api/animals/${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setAnimal(data)
+        else router.replace('/animaux')
+      })
+      .catch(() => router.replace('/animaux'))
   }, [id, router])
 
   // Retour de Mollie — vérifier le paiement
@@ -36,7 +39,7 @@ export default function BoostPage({ params }: { params: Promise<{ id: string }> 
         .then(r => r.json())
         .then(data => {
           if (data.paid) {
-            updateAnimal(id, { boosted: true })
+            fetch(`/api/animals/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ boosted: true }) }).catch(() => {})
             setPaid(true)
           } else {
             setError('Le paiement n\'a pas été confirmé. Contactez-nous si vous avez été débité.')

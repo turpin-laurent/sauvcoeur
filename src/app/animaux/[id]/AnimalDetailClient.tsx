@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { MapPin, Heart, Clock, ArrowLeft, MessageCircle, CheckCircle2, X, ChevronLeft, ChevronRight, Phone, Send, Calendar, Navigation } from 'lucide-react'
-import { getAnimalById, getBanners } from '@/lib/animals/store'
+import { getBanners } from '@/lib/animals/store'
 import { useAuth } from '@/lib/auth/context'
 
 interface Animal {

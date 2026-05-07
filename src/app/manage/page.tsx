@@ -7,11 +7,8 @@ import {
   Zap, LogOut, Upload, Eye, BarChart2, Mail, Shield, Plus, PawPrint, X, Save,
 } from 'lucide-react'
 import {
-  getAnimals, updateAnimal, deleteAnimal, saveAnimal,
   getBanners, saveBanners,
-  getPros, updatePro, deletePro, savePro,
   isAdminValid, clearAdminSession,
-  getNewsletterSubscribers, removeNewsletterSubscriber,
   getAdminAccounts, saveAdminAccount, deleteAdminAccount,
   type StoredAnimal, type StoredBanner, type StoredPro, type AdminAccount,
 } from '@/lib/animals/store'

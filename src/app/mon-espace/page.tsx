@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Plus, LogOut, Heart, MapPin, Clock, Edit, Trash2, PawPrint, Camera, Check, X, Save } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
-import { getAnimals, updateAnimal, deleteAnimal, type StoredAnimal } from '@/lib/animals/store'
+import type { StoredAnimal } from '@/lib/animals/store'
 
 const STATUS_BADGE: Record<string, string> = {
   lost: 'bg-red-100 text-red-700', found: 'bg-amber-100 text-amber-700', to_adopt: 'bg-emerald-100 text-emerald-700',
@@ -123,11 +123,16 @@ function AnimalEditor({ animal, onClose, onSaved }: {
     if (!form.specific_signs?.trim()) { setError('Les signes particuliers sont requis.'); return }
     setError('')
     setSaving(true)
-    updateAnimal(form.id, form)
-    await new Promise(r => setTimeout(r, 400))
+    try {
+      await fetch(`/api/animals/${form.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, moderation_status: 'pending' }),
+      })
+    } catch { /* non bloquant */ }
     setSaved(true)
     setSaving(false)
-    setTimeout(() => { onSaved(form); onClose() }, 600)
+    setTimeout(() => { onSaved({ ...form, moderation_status: 'pending' }); onClose() }, 600)
   }
 
   const inputCls = 'w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500'
@@ -308,8 +313,10 @@ export default function MonEspacePage() {
 
   useEffect(() => {
     if (!user) return
-    const all = getAnimals()
-    setMyAnimals(all.filter(a => a.author_id === user.email))
+    fetch(`/api/animals?author=${encodeURIComponent(user.email)}`)
+      .then(r => r.json())
+      .then((data: StoredAnimal[]) => Array.isArray(data) ? setMyAnimals(data) : null)
+      .catch(() => {})
   }, [user])
 
   if (loading || !user) {
@@ -322,15 +329,13 @@ export default function MonEspacePage() {
 
   const initials = user.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2)
 
-  const handleDeleteAnimal = (id: string) => {
+  const handleDeleteAnimal = async (id: string) => {
     if (!confirm('Supprimer cette annonce ?')) return
-    deleteAnimal(id)
+    await fetch(`/api/animals/${id}`, { method: 'DELETE' }).catch(() => {})
     setMyAnimals(prev => prev.filter(a => a.id !== id))
   }
 
   const handleAnimalSaved = (updated: StoredAnimal) => {
-    // Repasse en pending après modification
-    updateAnimal(updated.id, { ...updated, moderation_status: 'pending' })
     setMyAnimals(prev => prev.map(a => a.id === updated.id ? { ...updated, moderation_status: 'pending' } : a))
   }
 

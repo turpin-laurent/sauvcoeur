@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Heart, Search, MapPin, Clock, PawPrint, Star, LayoutList, Map, ChevronLeft, ChevronRight } from 'lucide-react'
 import { COMMUNES_974 } from '@/lib/geo/communes974'
-import { getAnimals, getBanners } from '@/lib/animals/store'
+import { getBanners } from '@/lib/animals/store'
 import type { PublicAnimal, AnimalStatus, AnimalSpecies } from '@/types'
 
 const ReunionMap = dynamic(() => import('@/components/map/ReunionMap'), { ssr: false })

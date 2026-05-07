@@ -3,15 +3,21 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 
-// GET /api/animals — liste (toutes pour admin, approuvées pour public)
+// GET /api/animals — liste (toutes pour admin, approuvées pour public, toutes par auteur si ?author=)
 export async function GET(req: NextRequest) {
   try {
-    const admin = req.headers.get('x-admin') === '1'
-    const sb    = supabaseAdmin()
+    const admin  = req.headers.get('x-admin') === '1'
+    const author = req.nextUrl.searchParams.get('author')
+    const sb     = supabaseAdmin()
 
     let query = sb.from('sc_animals').select('*').order('pinned', { ascending: false }).order('boosted', { ascending: false }).order('created_at', { ascending: false })
 
-    if (!admin) query = query.eq('moderation_status', 'approved')
+    if (author) {
+      // Mon espace : toutes les annonces de l'auteur (toute modération)
+      query = query.eq('author_id', author)
+    } else if (!admin) {
+      query = query.eq('moderation_status', 'approved')
+    }
 
     const { data, error } = await query
     if (error) throw error
