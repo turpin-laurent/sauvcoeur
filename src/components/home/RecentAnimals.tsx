@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { MapPin, Clock, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 interface Animal {
   id: string
@@ -15,9 +15,9 @@ interface Animal {
 }
 
 const STATUS: Record<string, { label: string; bg: string; color: string; emoji: string }> = {
-  lost:     { label: 'Perdu',  bg: 'bg-red-100',   color: 'text-red-700',   emoji: '😢' },
-  found:    { label: 'Trouvé', bg: 'bg-amber-100',  color: 'text-amber-700', emoji: '🔍' },
-  to_adopt: { label: 'Adopter',bg: 'bg-emerald-100',color: 'text-emerald-700',emoji: '🏠' },
+  lost:     { label: 'Perdu',   bg: 'bg-red-500/80',     color: 'text-white', emoji: '😢' },
+  found:    { label: 'Trouvé',  bg: 'bg-amber-500/80',   color: 'text-white', emoji: '🔍' },
+  to_adopt: { label: 'Adopter', bg: 'bg-emerald-500/80', color: 'text-white', emoji: '🏠' },
 }
 const SPECIES_EMOJI: Record<string, string> = {
   dog: '🐕', cat: '🐱', bird: '🐦', rabbit: '🐰', other: '🐾',
@@ -26,7 +26,7 @@ const SPECIES_EMOJI: Record<string, string> = {
 function timeAgo(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000)
   const d = Math.floor(h / 24)
-  return d > 0 ? `il y a ${d}j` : h > 0 ? `il y a ${h}h` : "à l'instant"
+  return d > 0 ? `${d}j` : h > 0 ? `${h}h` : 'maintenant'
 }
 
 function AnimalCard({ a }: { a: Animal }) {
@@ -35,28 +35,24 @@ function AnimalCard({ a }: { a: Animal }) {
 
   return (
     <Link href={`/animaux/${a.id}`}
-      className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
+      className="group relative flex-none w-40 sm:w-48 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-lg hover:-translate-y-0.5 transition-all bg-slate-100">
       {/* Photo */}
-      <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+      <div className="aspect-square overflow-hidden">
         {photo
           ? <img src={photo} alt={a.name ?? 'Animal'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           : <div className="w-full h-full flex items-center justify-center text-5xl">{SPECIES_EMOJI[a.species] ?? '🐾'}</div>
         }
-        {/* Badge statut */}
-        <span className={`absolute top-2 left-2 rounded-full px-2.5 py-1 text-xs font-semibold ${st.bg} ${st.color}`}>
-          {st.emoji} {st.label}
-        </span>
       </div>
 
-      {/* Infos */}
-      <div className="p-3 flex-1 flex flex-col gap-1">
-        <p className="font-semibold text-slate-900 text-sm truncate group-hover:text-emerald-700 transition-colors">
-          {a.name ?? `${st.label} — ${a.species === 'dog' ? 'Chien' : a.species === 'cat' ? 'Chat' : 'Animal'}`}
-        </p>
-        <div className="flex items-center justify-between text-xs text-slate-400 mt-auto">
-          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{a.location_city}</span>
-          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(a.created_at)}</span>
-        </div>
+      {/* Badge statut — en haut à gauche */}
+      <span className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-xs font-semibold backdrop-blur-sm ${st.bg} ${st.color}`}>
+        {st.emoji} {st.label}
+      </span>
+
+      {/* Ville + temps — en bas */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 pt-4 pb-2">
+        <p className="text-white text-xs font-medium truncate">{a.location_city}</p>
+        <p className="text-white/70 text-xs">{timeAgo(a.created_at)}</p>
       </div>
     </Link>
   )
@@ -64,12 +60,8 @@ function AnimalCard({ a }: { a: Animal }) {
 
 function CardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
-      <div className="aspect-[4/3] bg-slate-100" />
-      <div className="p-3 space-y-2">
-        <div className="h-4 bg-slate-200 rounded-full w-3/4" />
-        <div className="h-3 bg-slate-100 rounded-full w-1/2" />
-      </div>
+    <div className="flex-none w-40 sm:w-48 rounded-2xl border border-slate-200 overflow-hidden animate-pulse bg-slate-100">
+      <div className="aspect-square bg-slate-200" />
     </div>
   )
 }
@@ -81,38 +73,35 @@ export function RecentAnimals() {
     fetch('/api/animals')
       .then(r => r.json())
       .then((list: Animal[]) => {
-        // 4 dernières annonces perdu/trouvé approuvées
         const filtered = list
           .filter(a => a.status === 'lost' || a.status === 'found' || a.status === 'to_adopt')
-          .slice(0, 4)
+          .slice(0, 8)
         setAnimals(filtered)
       })
       .catch(() => setAnimals([]))
   }, [])
 
   return (
-    <section className="max-w-5xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-5">
+    <section className="max-w-5xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Dernières annonces</h2>
-          <p className="text-slate-500 text-sm mt-0.5">Animaux perdus, trouvés et à adopter à La Réunion</p>
+          <h2 className="text-lg font-bold text-slate-900">Dernières annonces</h2>
+          <p className="text-slate-500 text-sm">Perdus, trouvés et à adopter à La Réunion</p>
         </div>
+        <Link href="/animaux"
+          className="flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors shrink-0">
+          Voir tout <ChevronRight className="h-4 w-4" />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Scroll horizontal */}
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none snap-x snap-mandatory">
         {animals === null
-          ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+          ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
           : animals.length === 0
-          ? <p className="col-span-4 text-center text-slate-400 py-8">Aucune annonce pour l'instant.</p>
+          ? <p className="text-slate-400 py-8">Aucune annonce pour l'instant.</p>
           : animals.map(a => <AnimalCard key={a.id} a={a} />)
         }
-      </div>
-
-      <div className="mt-6 text-center">
-        <Link href="/animaux"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded-xl transition-colors">
-          Découvrir toutes nos annonces <ChevronRight className="h-4 w-4" />
-        </Link>
       </div>
     </section>
   )
