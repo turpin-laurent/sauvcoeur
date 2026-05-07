@@ -588,12 +588,16 @@ export default function ManagePage() {
                         <div className="flex gap-1">
                           {a.moderation_status === 'pending' && (
                             <>
-                              <button onClick={() => { updateAnimal(a.id, { moderation_status: 'approved' }); setAnnonces(getAnimals()) }}
-                                title="Approuver" className="p-1.5 rounded-lg border border-green-200 hover:bg-green-50 text-green-500 transition-colors">
+                              <button onClick={async () => {
+                                await fetch(`/api/animals/${a.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ moderation_status: 'approved' }) })
+                                setAnnonces(prev => prev.map(x => x.id === a.id ? { ...x, moderation_status: 'approved' } : x))
+                              }} title="Approuver" className="p-1.5 rounded-lg border border-green-200 hover:bg-green-50 text-green-500 transition-colors">
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                               </button>
-                              <button onClick={() => { updateAnimal(a.id, { moderation_status: 'rejected' }); setAnnonces(getAnimals()) }}
-                                title="Refuser" className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
+                              <button onClick={async () => {
+                                await fetch(`/api/animals/${a.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ moderation_status: 'rejected' }) })
+                                setAnnonces(prev => prev.map(x => x.id === a.id ? { ...x, moderation_status: 'rejected' } : x))
+                              }} title="Refuser" className="p-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-400 transition-colors">
                                 <XCircle className="h-3.5 w-3.5" />
                               </button>
                             </>
@@ -625,18 +629,18 @@ export default function ManagePage() {
               <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto" />
               <p className="font-bold text-slate-900">Annonce publiée !</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => { setQuickDone(false); setAnnonces(getAnimals()) }}
+                <button onClick={() => { setQuickDone(false); fetch('/api/animals', { headers: { 'x-admin': '1' } }).then(r => r.json()).then(setAnnonces).catch(() => {}) }}
                   className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
                   Publier une autre annonce
                 </button>
-                <button onClick={() => { setTab('annonces'); setAnnonces(getAnimals()) }}
+                <button onClick={() => { setTab('annonces'); fetch('/api/animals', { headers: { 'x-admin': '1' } }).then(r => r.json()).then(setAnnonces).catch(() => {}) }}
                   className="border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-semibold">
                   Voir les annonces
                 </button>
               </div>
             </div>
           ) : (
-            <QuickPostForm onDone={() => { setQuickDone(true); setAnnonces(getAnimals()) }} />
+            <QuickPostForm onDone={() => { setQuickDone(true); fetch('/api/animals', { headers: { 'x-admin': '1' } }).then(r => r.json()).then(setAnnonces).catch(() => {}) }} />
           )}
         </div>
       )}
