@@ -3,6 +3,9 @@ import { Search, ChevronRight } from 'lucide-react'
 import { NewsletterForm } from '@/components/home/NewsletterForm'
 import { RecentAnimals } from '@/components/home/RecentAnimals'
 import { HeroBadge } from '@/components/home/HeroBadge'
+
+// Pas de cache : les nouvelles annonces doivent apparaître immédiatement
+export const dynamic = 'force-dynamic'
 import ReunionMapClient from '@/components/map/ReunionMapClient'
 
 function IconFacebook({ className }: { className?: string }) {

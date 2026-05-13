@@ -2,6 +2,9 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import type { PublicAnimal, AnimalStatus, AnimalSpecies } from '@/types'
 import AnimauxClient from './AnimauxClient'
 
+// Rendu dynamique : on ne cache jamais, chaque visite relit la BDD
+export const dynamic = 'force-dynamic'
+
 async function getAnimals(): Promise<PublicAnimal[]> {
   try {
     const { data } = await supabaseAdmin()
