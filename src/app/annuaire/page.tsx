@@ -99,9 +99,9 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
   const handleConfirm = async (featured: boolean) => {
     setSaving(true)
-    await new Promise(r => setTimeout(r, 800))
+    const proId = `pro_${Date.now()}`
     const pro: StoredPro = {
-      id:             `pro_${Date.now()}`,
+      id:             proId,
       business_name:  form.business_name,
       contact_name:   form.contact_name,
       category:       form.category,
@@ -113,15 +113,38 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       logo:           logo || undefined,
       description:    form.description,
       is_verified:    false,
-      is_featured:    featured,
+      is_featured:    false,   // activé par le webhook après paiement
       is_association: form.is_association,
       created_at:     new Date().toISOString(),
     }
+
+    // 1. Sauvegarder le pro en BDD (statut pending)
     await fetch('/api/pros', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pro),
     }).catch(() => {})
+
+    if (featured) {
+      // 2a. Rediriger vers Mollie pour le paiement mise en avant
+      const res = await fetch('/api/mollie/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proId,
+          type:        'pro_featured',
+          amount:      '19.00',
+          description: `Mise en avant annuaire SauvCœur.re — ${form.business_name}`,
+        }),
+      }).then(r => r.json()).catch(() => null)
+
+      if (res?.checkoutUrl) {
+        window.location.href = res.checkoutUrl
+        return // la page va changer, pas besoin de continuer
+      }
+    }
+
+    // 2b. Inscription gratuite ou échec du checkout → afficher confirmation
     setSaving(false)
     setStep('done')
     setTimeout(() => { onSuccess(); onClose() }, 2000)
