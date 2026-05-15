@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import Script from 'next/script'
 import Link from 'next/link'
 import { PawPrint, Search, Heart, BookOpen, Plus } from 'lucide-react'
 import { AuthProvider } from '@/lib/auth/context'
@@ -54,6 +55,18 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${geist.variable} h-full antialiased`}>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-QRJ9N98RBB"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-QRJ9N98RBB');
+        `}</Script>
+      </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <AuthProvider>
 
